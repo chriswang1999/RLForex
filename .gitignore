@@ -103,3 +103,5 @@ ENV/
 # pytest
 .pytest_cache/
 tests/reports/
+
+*.csv
