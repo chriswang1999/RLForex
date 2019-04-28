@@ -1,3 +1,10 @@
+## Before presentation
+Have slide ready
+Split train dev and train on one currency
+Data visualization
+Algo comparison of linear regression, logistic regression and RL (why RL is a promising and hard direction)
+Add back previous action and clean code
+
 This repository contains a PIP package which is an OpenAI environment for
 simulating an enironment in which bananas get sold.
 
