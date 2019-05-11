@@ -19,16 +19,16 @@ def test(agent, environment, max_timesteps):
     return observation and action data for one episode
     """
     # observation_history is a list of tuples (observation, termination signal)
-    observation_history = [(environment.reset(), False)]
+    observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
     action_history = []
     
     t = 0
     done = False
     while not done:
         action = agent.act(observation_history, action_history)
-        observation, done = environment.step(action)
+        timestamp, state, price_record, done = environment.step(action)
         action_history.append(action)
-        observation_history.append((observation, done))
+        observation_history.append((timestamp, state, price_record, done))
         t += 1
         done = done or (t == max_timesteps)
 
