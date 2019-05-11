@@ -28,9 +28,9 @@ def live(agent, environment, num_episodes, max_timesteps,
         done = False
         while not done:
             action = agent.act(observation_history, action_history)
-            timestamp,state,price_record,done = environment.step(action)
+            timestamp, state, price_record, done = environment.step(action)
             action_history.append(action)
-            observation_history.append((timestamp,state,price_record, done))
+            observation_history.append((timestamp, state, price_record, done))
             t += 1
             done = done or (t == max_timesteps)
 

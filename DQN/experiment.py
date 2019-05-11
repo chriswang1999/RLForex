@@ -35,10 +35,10 @@ if __name__ == '__main__':
             feature_extractor=ForexIdentityFeature(),
             hidden_dims=[50, 50],
             learning_rate=5e-4,
-            buffer_size=50000,
-            batch_size=64,
+            buffer_size=3601,
+            batch_size=32,
             num_batches=100,
-            starts_learning=5000,
+            starts_learning=500,
             final_epsilon=0.02,
             discount=0.99,
             target_freq=10,
@@ -48,8 +48,8 @@ if __name__ == '__main__':
         _, _, rewards = live(
             agent=agent,
             environment=env,
-            num_episodes=1000, 
-            max_timesteps=500,
+            num_episodes=100,
+            max_timesteps=3601,
             verbose=True,
             print_every=50)
 

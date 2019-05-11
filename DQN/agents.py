@@ -1,5 +1,5 @@
 '''
-Agents for cartpole
+Agents for Forex
 '''
 import numpy as np
 import torch
@@ -13,7 +13,7 @@ class Buffer(object):
     A finite-memory buffer that rewrites oldest data when buffer is full.
     Stores tuples of the form (feature, action, reward, next feature). 
     """
-    def __init__(self, size=50000):
+    def __init__(self, size=3601):
         self.size = size
         self.buffer = []
         self.next_idx = 0
