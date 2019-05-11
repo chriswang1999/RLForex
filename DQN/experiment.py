@@ -29,7 +29,7 @@ if __name__ == '__main__':
         torch.manual_seed(seed)
 
         agent = DQNAgent(
-            action_set=[1, 2, 3],
+            action_set=[0, 1, 2],
             # reward_function=functools.partial(cartpole_reward_function, reward_type='sparse'),
             reward_function=functools.partial(Forex_reward_function),
             feature_extractor=ForexIdentityFeature(),
