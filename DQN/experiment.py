@@ -36,7 +36,8 @@ if __name__ == '__main__':
             hidden_dims=[50, 50],
             learning_rate=5e-4,
             buffer_size=5000,
-            batch_size=16,
+            # batch_size=16,
+            batch_size=1,
             num_batches=100,
             starts_learning=100,
             final_epsilon=0.02,
@@ -48,8 +49,10 @@ if __name__ == '__main__':
         _, _, rewards = live(
             agent=agent,
             environment=env,
-            num_episodes=100,
-            max_timesteps=3601,
+            # num_episodes=100,
+            # max_timesteps=3601,
+            num_episodes=3,
+            max_timesteps=3,
             verbose=True,
             print_every=50)
 

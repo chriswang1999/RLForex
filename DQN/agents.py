@@ -152,6 +152,15 @@ class DQNAgent(Agent):
             self.target_freq = target_freq # target nn updated every target_freq episodes
             self.num_episodes = 0
 
+            '''
+            define device
+            '''
+            if torch.cuda.is_available():
+                _train = "cuda:0"
+            else:
+                _train = "cpu"
+            device = torch.device(_train)
+            self.model = self.model.to(device)
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
             
             # for debugging purposes
@@ -202,10 +211,14 @@ class DQNAgent(Agent):
 
         for _ in range(self.num_batches):
             minibatch = self.buffer.sample(batch_size=self.batch_size)
-            
-            feature_batch = torch.zeros(self.batch_size, self.feature_dim)
-            action_batch = torch.zeros(self.batch_size, 1, dtype=torch.long)
-            reward_batch = torch.zeros(self.batch_size, 1)
+            if torch.cuda.is_available():
+                feature_batch = torch.zeros(self.batch_size, self.feature_dim).cuda()
+                action_batch = torch.zeros(self.batch_size, 1, dtype=torch.long).cuda()
+                reward_batch = torch.zeros(self.batch_size, 1).cuda()
+            else:
+                feature_batch = torch.zeros(self.batch_size, self.feature_dim)
+                action_batch = torch.zeros(self.batch_size, 1, dtype=torch.long)
+                reward_batch = torch.zeros(self.batch_size, 1)
             non_terminal_idxs = []
             next_feature_batch = []
             for i, d in enumerate(minibatch):
@@ -218,9 +231,15 @@ class DQNAgent(Agent):
                     next_feature_batch.append(x_next)
 
             model_estimates = self.model(feature_batch).gather(1, action_batch)
-            future_values = torch.zeros(self.batch_size)
+            if torch.cuda.is_available():
+                future_values = torch.zeros(self.batch_size).cuda()
+            else:
+                future_values = torch.zeros(self.batch_size)
             if next_feature_batch != []:
-                next_feature_batch = torch.tensor(next_feature_batch, dtype=torch.float)
+                if torch.cuda.is_available():
+                    next_feature_batch = torch.tensor(next_feature_batch, dtype=torch.float).cuda()
+                else:
+                    next_feature_batch = torch.tensor(next_feature_batch, dtype=torch.float)
                 future_values[non_terminal_idxs] = self.target_net(next_feature_batch).max(1)[0].detach()
             future_values = future_values.unsqueeze(1)
             target_values = reward_batch + self.discount * future_values
@@ -229,6 +248,7 @@ class DQNAgent(Agent):
 
             self.optimizer.zero_grad()
             loss.backward()
+            # print(self.model.layers[0].weight.grad)
             self.optimizer.step()
 
             self.running_loss = 0.99 * self.running_loss + 0.01 * loss.item()
