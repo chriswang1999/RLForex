@@ -71,7 +71,7 @@ class Agent(object):
             return self._random_argmax(action_values)
         else:
             # print(np.random.choice(self.action_set, 1)[0])
-            return np.random.randint(3)
+            return np.random.choice(self.action_set, 1)[0]
 
     def _boltzmann_action(self, action_values, beta):
         action_values = action_values - max(action_values)
@@ -122,7 +122,7 @@ class DQNAgent(Agent):
         discount=0.99, target_freq=10, verbose=False, print_every=1, 
         test_model_path=None):
 
-        Agent.__init__(self, [-1, 0, 1], reward_function)
+        Agent.__init__(self, [0, 1, 2], reward_function)
         self.feature_extractor = feature_extractor
         self.feature_dim = self.feature_extractor.dimension
 
