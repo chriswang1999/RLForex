@@ -3,7 +3,7 @@ from run_b import train_eval
 import time
 import argparse
 
-reward_file = 'reward'+ str(time.time()) + '.txt'
+reward_file = './deep/reward'+ str(time.time()) + '.txt'
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='train_eval')
