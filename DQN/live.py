@@ -18,6 +18,7 @@ def live(agent, environment, num_episodes, max_timesteps,
         print("agent: %s, number of episodes: %d" % (str(agent), num_episodes))
     
     for episode in range(num_episodes):
+        print('eps',episode)
         agent.reset_cumulative_reward()
 
         # observation_history is a list of tuples (observation, termination signal)
@@ -27,6 +28,7 @@ def live(agent, environment, num_episodes, max_timesteps,
         t = 0
         done = False
         while not done:
+            print(t)
             action = agent.act(observation_history, action_history)
             timestamp, state, price_record, done = environment.step(action)
             action_history.append(action)
@@ -66,7 +68,7 @@ if __name__=='__main__':
         feature_extractor=ForexIdentityFeature(),
         hidden_dims=[50, 50],
         learning_rate=5e-4, 
-        buffer_size=50,
+        buffer_size=5000,
         batch_size=12,
         num_batches=100, 
         starts_learning=5000, 
@@ -86,8 +88,8 @@ if __name__=='__main__':
 
     agent.save('./dqn.pt')
 
-    plt.figure()
-    plt.plot(rewards)
-    plt.xlabel('episode')
-    plt.ylabel('reward')
-    plt.show()
+    # plt.figure()
+    # plt.plot(rewards)
+    # plt.xlabel('episode')
+    # plt.ylabel('reward')
+    # plt.show()

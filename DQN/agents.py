@@ -57,7 +57,6 @@ class Agent(object):
 
     def get_episode_reward(self, observation_history, action_history):
         tau = len(action_history)
-        # reward_history = np.zeros(tau)
         reward_history = torch.zeros(tau)
         for t in range(tau):
             reward_history[t] = self.reward_function(
@@ -65,18 +64,15 @@ class Agent(object):
         return reward_history
 
     def _random_argmax(self, action_values):
-        # argmax_list = np.where(action_values==np.max(action_values))[0]
-        # return self.action_set[argmax_list[np.random.randint(argmax_list.size)]]
-        argmax_list = torch.where(action_values==torch.max(action_values))[0]
-        return self.action_set[argmax_list[torch.randint(argmax_list.size, (1,))[0]]]
+        _, _idx = torch.max(action_values, 0)
+        # argmax_list = torch.where(action_values==torch.max(action_values))[0]
+        # return self.action_set[argmax_list[torch.randint(argmax_list.size, (1,))[0]]]
+        return self.action_set[_idx]
 
     def _epsilon_greedy_action(self, action_values, epsilon):
-#        if np.random.random() < 1- epsilon:
         if torch.rand(1)[0] < 1- epsilon:
             return self._random_argmax(action_values)
         else:
-            # print(np.random.choice(self.action_set, 1)[0])
-            # return np.random.choice(self.action_set, 1)[0]
             return self.action_set[torch.randint(len(self.action_set), (1,))[0].int()]
 
     def _boltzmann_action(self, action_values, beta):
@@ -107,12 +103,10 @@ class RandomAgent(Agent):
         return "random agent"
 
     def act(self, observation_history, action_history):
-#        return np.random.choice(self.action_set, 1)[0]
         return self.action_set[torch.randint(len(self.action_set), (1,))[0]]
 
     def update_buffer(self, observation_history, action_history):
         reward_history = self.get_episode_reward(observation_history, action_history)
-#        self.cummulative_reward += np.sum(reward_history)
         self.cummulative_reward += torch.sum(reward_history)
 
 
@@ -189,11 +183,9 @@ class DQNAgent(Agent):
         update buffer with data collected from current episode
         """
         reward_history = self.get_episode_reward(observation_history, action_history)
-#        self.cummulative_reward += np.sum(reward_history)
         self.cummulative_reward += torch.sum(reward_history)
 
         tau = len(action_history)
-#        feature_history = np.zeros((tau+1, self.feature_extractor.dimension))
         feature_history = torch.zeros((tau+1, self.feature_extractor.dimension))
         for t in range(tau+1):
             feature_history[t] = self.feature_extractor.get_feature(observation_history[:t+1])
