@@ -9,9 +9,9 @@ import skvideo.io
 import functools
 
 from environment import ForexEnv
-from agents import RandomAgent
-from agents import DQNAgent
-from agents import Forex_reward_function
+from agents_old import RandomAgent
+from agents_old import DQNAgent
+from agents_old import Forex_reward_function
 from feature import ForexIdentityFeature
 
 def test(agent, environment, max_timesteps):

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import torch
 # import datetime
 # from pro_data import CreateFeature
 
@@ -77,9 +78,9 @@ class ForexEnv(Environment):
         position[action] = 1
 
         bid, ask, feature_span = self.get_features(self.index)
-        self.state = np.append(feature_span,position, axis = 0)
-        self.price_record = (bid,ask)
-        return self.index, self.state, self.price_record, False
+        self.state = np.append(feature_span,position, axis = 0).astype('float32')
+        self.price_record = (torch.tensor(bid),torch.tensor(ask))
+        return torch.tensor(self.index), torch.tensor(self.state), self.price_record, False
 
     def reset(self, mode = 'train'):
         if mode == 'train':
@@ -96,9 +97,9 @@ class ForexEnv(Environment):
         position[action] = 1
 
         bid, ask, feature_span = self.get_features(self.index)
-        self.state = np.append(feature_span,position, axis = 0)
-        self.price_record = (bid,ask)
-        return self.index, self.state, self.price_record
+        self.state = np.append(feature_span,position, axis = 0).astype('float32')
+        self.price_record = (torch.tensor(bid),torch.tensor(ask))
+        return torch.tensor(self.index), torch.tensor(self.state), self.price_record
 
 
 ### test

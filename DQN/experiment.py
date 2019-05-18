@@ -52,7 +52,7 @@ if __name__ == '__main__':
             # num_episodes=100,
             # max_timesteps=3601,
             num_episodes=3,
-            max_timesteps=3,
+            max_timesteps=96,
             verbose=True,
             print_every=50)
 

@@ -66,7 +66,7 @@ if __name__=='__main__':
         feature_extractor=ForexIdentityFeature(),
         hidden_dims=[50, 50],
         learning_rate=5e-4, 
-        buffer_size=50000,
+        buffer_size=50,
         batch_size=12,
         num_batches=100, 
         starts_learning=5000, 
