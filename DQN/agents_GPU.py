@@ -8,6 +8,11 @@ import math
 
 T = 3601
 
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
+print(device)
+
+
 class Buffer(object):
     """
     A finite-memory buffer that rewrites oldest data when buffer is full.
@@ -28,6 +33,7 @@ class Buffer(object):
     def sample(self, batch_size=1):
         # idxs = np.random.randint(len(self.buffer), size=batch_size)
         idxs = torch.randint(len(self.buffer), size=(batch_size,))
+        idxs = idxs.to(device)
         return [self.buffer[i] for i in idxs]
 
 
@@ -58,7 +64,7 @@ class Agent(object):
     def get_episode_reward(self, observation_history, action_history):
         tau = len(action_history)
         # reward_history = np.zeros(tau)
-        reward_history = torch.zeros(tau)
+        reward_history = torch.zeros(tau).to(device)
         for t in range(tau):
             reward_history[t] = self.reward_function(
                 observation_history[:t+2], action_history[:t+1])
@@ -67,8 +73,9 @@ class Agent(object):
     def _random_argmax(self, action_values):
         # argmax_list = np.where(action_values==np.max(action_values))[0]
         # return self.action_set[argmax_list[np.random.randint(argmax_list.size)]]
-        argmax_list = torch.where(action_values==torch.max(action_values))[0]
-        return self.action_set[argmax_list[torch.randint(argmax_list.size, (1,))[0]]]
+        argmax_list = torch.argmax(action_values).to(device)      
+#        return self.action_set[argmax_list[torch.randint(len(argmax_list), (1,))[0]]]
+        return self.action_set[argmax_list.item()]
 
     def _epsilon_greedy_action(self, action_values, epsilon):
 #        if np.random.random() < 1- epsilon:
@@ -77,16 +84,16 @@ class Agent(object):
         else:
             # print(np.random.choice(self.action_set, 1)[0])
            # return np.random.choice(self.action_set, 1)[0]
-           return self.action_set[torch.randint(len(self.action_set), (1,))[0]]
+           return self.action_set[torch.randint(len(self.action_set), (1,)).to(device)[0]]
 
     def _boltzmann_action(self, action_values, beta):
         action_values = action_values - max(action_values)
     #   action_probabilities = np.exp(action_values / beta)
     #   action_probabilities /= np.sum(action_probabilities)
     #   return np.random.choice(self.action_set, 1, p=action_probabilities)[0]
-        action_probabilities = torch.exp(action_values / beta)
-        action_probabilities /= torch.sum(action_probabilities)
-        m = torch.distributions.Categorical(action_probabilities)
+        action_probabilities = torch.exp(action_values / beta).to(device)
+        action_probabilities /= torch.sum(action_probabilities).to(device)
+        m = torch.distributions.Categorical(action_probabilities).to(device)
         return self.action_set[m.sample()]
 
     def _epsilon_boltzmann_action(self, action_values, epsilon):
@@ -94,9 +101,9 @@ class Agent(object):
 #        action_probabilities = np.exp(action_values / (np.exp(1)*epsilon))
 #        action_probabilities /= np.sum(action_probabilities)
 #        return np.random.choice(self.action_set, 1, p=action_probabilities)[0]
-        action_probabilities = torch.exp(action_values / (torch.exp(1)*epsilon))
-        action_probabilities /= torch.sum(action_probabilities)
-        m = torch.distributions.Categorical(action_probabilities)       
+        action_probabilities = torch.exp(action_values / (torch.exp(1)*epsilon)).to(device)
+        action_probabilities /= torch.sum(action_probabilities).to(device)
+        m = torch.distributions.Categorical(action_probabilities).to(device)       
         return self.action_set[m.sample()]
 
 class RandomAgent(Agent):
@@ -108,12 +115,12 @@ class RandomAgent(Agent):
 
     def act(self, observation_history, action_history):
 #        return np.random.choice(self.action_set, 1)[0]
-        return self.action_set[torch.randint(len(self.action_set), (1,))[0]]
+        return self.action_set[torch.randint(len(self.action_set), (1,)).to(device)[0]]
 
     def update_buffer(self, observation_history, action_history):
         reward_history = self.get_episode_reward(observation_history, action_history)
 #        self.cummulative_reward += np.sum(reward_history)
-        self.cummulative_reward += torch.sum(reward_history)
+        self.cummulative_reward += torch.sum(reward_history).to(device)
 
 
 class MLP(nn.Module):
@@ -190,14 +197,14 @@ class DQNAgent(Agent):
         """
         reward_history = self.get_episode_reward(observation_history, action_history)
 #        self.cummulative_reward += np.sum(reward_history)
-        self.cummulative_reward += torch.sum(reward_history)
+        self.cummulative_reward += torch.sum(reward_history).to(device)
 
         tau = len(action_history)
 #        feature_history = np.zeros((tau+1, self.feature_extractor.dimension))
-        feature_history = torch.zeros((tau+1, self.feature_extractor.dimension))
+        feature_history = torch.zeros((tau+1, self.feature_extractor.dimension)).to(device)
         for t in range(tau+1):
-            feature_history[t] = self.feature_extractor.get_feature(observation_history[:t+1])
-
+            feature_history[t] = self.feature_extractor.get_feature(observation_history[:t+1]).to(device)
+            
         for t in range(tau-1):
             self.buffer.add(feature_history[t], action_history[t], 
                 reward_history[t], feature_history[t+1])
@@ -220,24 +227,28 @@ class DQNAgent(Agent):
         for _ in range(self.num_batches):
             minibatch = self.buffer.sample(batch_size=self.batch_size)
             
-            feature_batch = torch.zeros(self.batch_size, self.feature_dim)
-            action_batch = torch.zeros(self.batch_size, 1, dtype=torch.long)
-            reward_batch = torch.zeros(self.batch_size, 1)
+            feature_batch = torch.zeros(self.batch_size, self.feature_dim).to(device)
+            action_batch = torch.zeros(self.batch_size, 1, dtype=torch.long).to(device)
+            reward_batch = torch.zeros(self.batch_size, 1).to(device)
             non_terminal_idxs = []
             next_feature_batch = []
             for i, d in enumerate(minibatch):
                 x, a, r, x_next = d
-                feature_batch[i] = torch.from_numpy(x)
-                action_batch[i] = torch.tensor(a, dtype=torch.long)
+#                feature_batch[i] = torch.from_numpy(x)
+                feature_batch[i] = x
+                action_batch[i] = torch.tensor(a, dtype=torch.long).to(device)
                 reward_batch[i] = r
                 if x_next is not None:
                     non_terminal_idxs.append(i)
                     next_feature_batch.append(x_next)
 
             model_estimates = self.model(feature_batch).gather(1, action_batch)
-            future_values = torch.zeros(self.batch_size)
+            future_values = torch.zeros(self.batch_size).to(device)
             if next_feature_batch != []:
-                next_feature_batch = torch.tensor(next_feature_batch, dtype=torch.float)
+                
+#                next_feature_batch = torch.tensor(next_feature_batch, dtype=torch.float)
+                next_feature_batch = torch.stack(next_feature_batch).type(torch.float).to(device)
+                #print(next_feature_batch)
                 future_values[non_terminal_idxs] = self.target_net(next_feature_batch).max(1)[0].detach()
             future_values = future_values.unsqueeze(1)
             target_values = reward_batch + self.discount * future_values
@@ -268,8 +279,10 @@ class DQNAgent(Agent):
         """ select action according to an epsilon greedy policy with respect to 
         the Q network """
         feature = self.feature_extractor.get_feature(observation_history)
+#        print(feature.dtype)
         with torch.no_grad():
-            action_values = self.model(torch.from_numpy(feature).float()).numpy()
+#            action_values = self.model(torch.from_numpy(feature).float()).numpy()
+            action_values = self.model(feature.float())
         if not self.test_mode:
             action = self._epsilon_greedy_action(action_values, self.epsilon)
             self.timestep += 1
