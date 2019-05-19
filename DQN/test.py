@@ -3,9 +3,9 @@ test and visualize trained cartpole agents
 """
 import numpy as np
 import torch
-from gym.envs.classic_control import rendering
-import time
-import skvideo.io
+# from gym.envs.classic_control import rendering
+# import time
+# import skvideo.io
 import functools
 
 from environment import ForexEnv

@@ -18,17 +18,13 @@ def live(agent, environment, num_episodes, max_timesteps,
         print("agent: %s, number of episodes: %d" % (str(agent), num_episodes))
     
     for episode in range(num_episodes):
-        print('eps',episode)
         agent.reset_cumulative_reward()
-
-        # observation_history is a list of tuples (observation, termination signal)
         observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
         action_history = []
         
         t = 0
         done = False
         while not done:
-            print(t)
             action = agent.act(observation_history, action_history)
             timestamp, state, price_record, done = environment.step(action)
             action_history.append(action)
@@ -87,9 +83,3 @@ if __name__=='__main__':
                             print_every=50)
 
     agent.save('./dqn.pt')
-
-    # plt.figure()
-    # plt.plot(rewards)
-    # plt.xlabel('episode')
-    # plt.ylabel('reward')
-    # plt.show()

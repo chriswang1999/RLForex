@@ -64,7 +64,7 @@ class ForexEnv(Environment):
         self.test = self.totalframe[int(0.8*len(self.totalframe)):]
 
     def get_features(self,_idx):
-        colindex = range(9,9 + self.lag * 9 + 4)
+        # colindex = range(9,9 + self.lag * 9 + 4)
         bid = self.df['bid price'].values[_idx]
         ask = self.df['ask price'].values[_idx]
         # feature_span = self.df[colindex].to_numpy()[_idx,:]
