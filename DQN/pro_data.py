@@ -32,7 +32,7 @@ def CreateFeature(cur, lag):
     tmp = tmp.drop(['date', 'dow','hh','mm','ss'], axis=1)
     tmp = tmp.reset_index(drop=True)
     tmp = tmp[lag:]
-    filename = './data' + cur + '_lag_' + str(lag) + '.csv'
+    filename = './data/' + cur + '_lag_' + str(lag) + '.csv'
     tmp.to_csv(filename ,index=False)
 
 if __name__=='__main__':
