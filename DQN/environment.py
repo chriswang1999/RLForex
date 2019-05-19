@@ -7,6 +7,10 @@ import torch
 # Pad = pd.read_csv('PadData_v2.csv')
 # currency = list(np.sort(Pad['currency pair'].unique()))
 
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
+print(device)
+
 class Environment(object):
     """
     generic class for environments
@@ -26,7 +30,7 @@ class Environment(object):
 
 class ForexEnv(Environment):
     """
-    Observation: 
+    Observation:
         self.timestamp
         self.state = 4 + 144 + 3 = 151
             time sin(2 pi t/T) 4
@@ -56,7 +60,7 @@ class ForexEnv(Environment):
         self.state = None
         self.price_record = None
         # self.df = CreateFeature(self.ccy, self.lag).reset_index(drop = True)
-        filename = self.ccy + '_lag_' + str(self.lag) + '.csv'
+        filename = './data/' + self.ccy + '_lag_' + str(self.lag) + '.csv'
         self.df = pd.read_csv(filename).reset_index(drop = True)
         self.totalframe = self.df.index.values.tolist()
         self.train = self.totalframe[:int(0.6*len(self.totalframe))-self.min_history]
@@ -64,7 +68,7 @@ class ForexEnv(Environment):
         self.test = self.totalframe[int(0.8*len(self.totalframe)):]
 
     def get_features(self,_idx):
-        # colindex = range(9,9 + self.lag * 9 + 4)
+        colindex = range(9,9 + self.lag * 9 + 4)
         bid = self.df['bid price'].values[_idx]
         ask = self.df['ask price'].values[_idx]
         # feature_span = self.df[colindex].to_numpy()[_idx,:]
@@ -79,8 +83,8 @@ class ForexEnv(Environment):
 
         bid, ask, feature_span = self.get_features(self.index)
         self.state = np.append(feature_span,position, axis = 0).astype('float32')
-        self.price_record = (torch.tensor(bid),torch.tensor(ask))
-        return torch.tensor(self.index), torch.tensor(self.state), self.price_record, False
+        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device))
+        return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record, False
 
     def reset(self, mode = 'train'):
         if mode == 'train':
@@ -98,8 +102,8 @@ class ForexEnv(Environment):
 
         bid, ask, feature_span = self.get_features(self.index)
         self.state = np.append(feature_span,position, axis = 0).astype('float32')
-        self.price_record = (torch.tensor(bid),torch.tensor(ask))
-        return torch.tensor(self.index), torch.tensor(self.state), self.price_record
+        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device))
+        return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record
 
 
 ### test

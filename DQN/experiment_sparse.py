@@ -8,9 +8,9 @@ from tqdm import trange
 
 from live import live
 from environment import ForexEnv
-from agents import RandomAgent
-from agents import DQNAgent
-from agents import Forex_reward_function
+from agents_sparse import RandomAgent
+from agents_sparse import DQNAgent
+from agents_sparse import Forex_reward_function
 from feature import ForexIdentityFeature
 
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             final_epsilon=0.02,
             discount=0.99,
             target_freq=10,
-            verbose=False,
+            verbose=False, 
             print_every=10)
 
         _, _, rewards = live(

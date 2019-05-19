@@ -47,9 +47,9 @@ def live(agent, environment, num_episodes, max_timesteps,
 
 ### Example of usage
 from environment import ForexEnv
-from agents import RandomAgent
-from agents import DQNAgent
-from agents import Forex_reward_function
+from agents_sparse import RandomAgent
+from agents_sparse import DQNAgent
+from agents_sparse import Forex_reward_function
 from feature import ForexIdentityFeature
 
 if __name__=='__main__':
