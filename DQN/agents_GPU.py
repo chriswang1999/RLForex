@@ -151,7 +151,7 @@ class DQNAgent(Agent):
         # build Q network
         # we use a multilayer perceptron
         dims = [self.feature_dim] + hidden_dims + [len(self.action_set)]
-        self.model = MLP(dims)
+        self.model = MLP(dims).to(device)
 
         if test_model_path is None:
             self.test_mode = False
@@ -167,7 +167,7 @@ class DQNAgent(Agent):
             
             self.buffer = Buffer(self.buffer_size)
 
-            self.target_net = MLP(dims)
+            self.target_net = MLP(dims).to(device)
             self.target_net.load_state_dict(self.model.state_dict())
             self.target_net.eval()
 
