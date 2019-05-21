@@ -52,7 +52,7 @@ class ForexEnv(Environment):
         none
     """
 
-    def __init__(self, cur = 'AUDUSD', lag = 16, min_history = 1000):
+    def __init__(self, cur = 'AUDUSD', lag = 16, min_history = 1000, mode = 'train'):
         self.ccy = cur
         self.lag = lag
         self.min_history = min_history
@@ -66,6 +66,7 @@ class ForexEnv(Environment):
         self.train = self.totalframe[:int(0.6*len(self.totalframe))-self.min_history]
         self.eval = self.totalframe[int(0.6*len(self.totalframe)):int(0.8*len(self.totalframe))-self.min_history]
         self.test = self.totalframe[int(0.8*len(self.totalframe)):]
+        self.mode = mode
 
     def get_features(self,_idx):
         colindex = range(9,9 + self.lag * 9 + 4)
@@ -75,7 +76,7 @@ class ForexEnv(Environment):
         feature_span = self.df.iloc[_idx,9:].values
         return bid, ask, feature_span
 
-    def step(self, action, mode = 'train'):
+    def step(self, action):
         assert action in [0, 1, 2], "invalid action"
         self.index += 1
         position = np.zeros(3)
@@ -86,12 +87,12 @@ class ForexEnv(Environment):
         self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device))
         return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record, False
 
-    def reset(self, mode = 'train'):
-        if mode == 'train':
+    def reset(self):
+        if self.mode == 'train':
             to_draw = self.train
-        elif mode == 'eval':
+        elif self.mode == 'eval':
             to_draw = self.eval
-        elif mode == 'test':
+        elif self.mode == 'test':
             to_draw = self.test
         n = np.random.choice(len(to_draw))
         self.index = to_draw[n]

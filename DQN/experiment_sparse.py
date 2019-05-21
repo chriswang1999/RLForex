@@ -35,7 +35,7 @@ if __name__ == '__main__':
             feature_extractor=ForexIdentityFeature(),
             hidden_dims=[50, 50],
             learning_rate=5e-4,
-            buffer_size=1000,
+            buffer_size=5000,
             # batch_size=16,
             batch_size=8,
             num_batches=100,
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             # num_episodes=100,
             # max_timesteps=3601,
             num_episodes=500,
-            max_timesteps=96,
+            max_timesteps=3600,
             verbose=True,
             print_every=50)
 
