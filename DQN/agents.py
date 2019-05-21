@@ -32,7 +32,7 @@ class Buffer(object):
 
     def sample(self, batch_size=1):
         # idxs = np.random.randint(len(self.buffer), size=batch_size)
-        idxs = torch.randint(len(self.buffer), size=(batch_size,))
+        idxs = torch.randint(len(self.buffer), size=(batch_size,)).int()
         idxs = idxs.to(device)
         return [self.buffer[i] for i in idxs]
 
@@ -84,7 +84,7 @@ class Agent(object):
         else:
             # print(np.random.choice(self.action_set, 1)[0])
            # return np.random.choice(self.action_set, 1)[0]
-           return self.action_set[torch.randint(len(self.action_set), (1,)).to(device)[0]]
+            return self.action_set[torch.randint(len(self.action_set), (1,)).int().to(device)[0]]
 
     def _boltzmann_action(self, action_values, beta):
         action_values = action_values - max(action_values)
