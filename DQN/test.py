@@ -3,6 +3,7 @@ test and visualize trained cartpole agents
 """
 import numpy as np
 import torch
+import pandas as pd
 # from gym.envs.classic_control import rendering
 # import time
 # import skvideo.io
@@ -34,6 +35,9 @@ def test(agent, environment, max_timesteps):
 
     return observation_history, action_history
 
+# def cap_reward(seed,cur = 'AUDUSD',lag = 16, length = 360):
+#     filename = './data/' + cur + '_lag_' + str(lag) + '.csv'
+#     df= pd.read_csv(filename).reset_index(drop = True)
 
 if __name__=='__main__':
     dqn_model_path = './agents/dqn|0.pt'
@@ -42,13 +46,14 @@ if __name__=='__main__':
     torch.manual_seed(123)
 
     env = ForexEnv(mode = 'eval')
-    eps = 10
+    eps = 100
     rewards = []
 
     agent = DQNAgent(
         action_set=[0, 1, 2],
         reward_function=functools.partial(Forex_reward_function),
         feature_extractor=ForexIdentityFeature(),
+        hidden_dims=[10, 10],
         test_model_path=dqn_model_path)
 
     for e in range(eps):
@@ -57,14 +62,17 @@ if __name__=='__main__':
             environment=env,
             max_timesteps=3600)
         r = torch.sum(agent.get_episode_reward(observation_history, action_history))
-        print('reward %.2f' % r)
+        print('reward %.5f' % r)
         rewards.append(r)
+        # print(action_history)
         if e == eps -1:
-            print(action_history)
             print(agent.get_episode_reward(observation_history, action_history))
+            print('short', action_history.count(0))
+            print('neutral', action_history.count(1))
+            print('long', action_history.count(2))
 
     reward = torch.mean(torch.stack(rewards))
 
-    print('agent %s, cumulative reward %.2f' % (str(agent), reward))
+    print('agent %s, cumulative reward %.4f' % (str(agent), reward))
 
 

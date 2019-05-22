@@ -33,11 +33,14 @@ def live(agent, environment, num_episodes, max_timesteps,
             done = done or (t == max_timesteps)
 
         agent.update_buffer(observation_history, action_history)
+        # print('uploading')
         agent.learn_from_buffer()
+        # print('learning')
 
         observation_data.append(observation_history)
         action_data.append(action_history)
         rewards.append(agent.cummulative_reward)
+        print(action_history)
 
         if verbose and (episode % print_every == 0):
             print("ep %d,  reward %.2f" % (episode, agent.cummulative_reward))
@@ -47,9 +50,9 @@ def live(agent, environment, num_episodes, max_timesteps,
 
 ### Example of usage
 from environment import ForexEnv
-from agents_sparse import RandomAgent
-from agents_sparse import DQNAgent
-from agents_sparse import Forex_reward_function
+from agents import RandomAgent
+from agents import DQNAgent
+from agents import Forex_reward_function
 from feature import ForexIdentityFeature
 
 if __name__=='__main__':

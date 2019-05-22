@@ -69,7 +69,6 @@ class ForexEnv(Environment):
         self.mode = mode
 
     def get_features(self,_idx):
-        colindex = range(9,9 + self.lag * 9 + 4)
         bid = self.df['bid price'].values[_idx]
         ask = self.df['ask price'].values[_idx]
         # feature_span = self.df[colindex].to_numpy()[_idx,:]
@@ -83,8 +82,10 @@ class ForexEnv(Environment):
         position[action] = 1
 
         bid, ask, feature_span = self.get_features(self.index)
+        next_bid, next_ask, _ = self.get_features(self.index + 1)
         self.state = np.append(feature_span,position, axis = 0).astype('float32')
-        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device))
+        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device),
+                             torch.tensor(next_bid).to(device), torch.tensor(next_ask).to(device))
         return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record, False
 
     def reset(self):
@@ -102,8 +103,10 @@ class ForexEnv(Environment):
         position[action] = 1
 
         bid, ask, feature_span = self.get_features(self.index)
+        next_bid, next_ask, _ = self.get_features(self.index + 1)
         self.state = np.append(feature_span,position, axis = 0).astype('float32')
-        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device))
+        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device),
+                             torch.tensor(next_bid).to(device), torch.tensor(next_ask).to(device))
         return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record
 
 
