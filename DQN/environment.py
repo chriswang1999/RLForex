@@ -52,7 +52,7 @@ class ForexEnv(Environment):
         none
     """
 
-    def __init__(self, cur = 'AUDUSD', lag = 16, min_history = 1000, mode = 'train'):
+    def __init__(self, cur = 'AUDUSD', lag = 16, min_history = 1000, mode = 'train', week = 1):
         self.ccy = cur
         self.lag = lag
         self.min_history = min_history
@@ -60,24 +60,35 @@ class ForexEnv(Environment):
         self.state = None
         self.price_record = None
         # self.df = CreateFeature(self.ccy, self.lag).reset_index(drop = True)
-        filename = './data/' + self.ccy + '_lag_' + str(self.lag) + '.csv'
-        self.df = pd.read_csv(filename).reset_index(drop = True)
-        self.totalframe = self.df.index.values.tolist()
-        self.train = self.totalframe[:int(0.6*len(self.totalframe))-self.min_history]
-        self.eval = self.totalframe[int(0.6*len(self.totalframe)):int(0.8*len(self.totalframe))-self.min_history]
-        self.test = self.totalframe[int(0.8*len(self.totalframe)):]
+        trainname = './data/train_' + self.ccy + '_lag_' + str(self.lag) + '_week' + str(week) + '.csv'
+        evalname = './data/eval_' + self.ccy + '_lag_' + str(self.lag) + '_week' + str(week) + '.csv'
+        self.df_train = pd.read_csv(trainname).reset_index(drop = True)
+        self.df_eval = pd.read_csv(evalname).reset_index(drop = True)
+        self.trainframe = self.df_train.index.values.tolist()
+        self.evalframe = self.df_eval.index.values.tolist()
+        self.train = self.trainframe[:-self.min_history]
+        self.eval = self.evalframe[:-self.min_history]
         self.mode = mode
 
     def get_features(self,_idx):
-        bid = self.df['bid price'].values[_idx]
-        ask = self.df['ask price'].values[_idx]
-        # feature_span = self.df[colindex].to_numpy()[_idx,:]
-        feature_span = self.df.iloc[_idx,9:].values
+        if self.mode == 'train':
+            bid = self.df_train['bid price'].values[_idx]
+            ask = self.df_train['ask price'].values[_idx]
+            feature_span = self.df_train.iloc[_idx,9:].values
+        if self.mode == 'eval':
+            bid = self.df_eval['bid price'].values[_idx]
+            ask = self.df_eval['ask price'].values[_idx]
+            feature_span = self.df_eval.iloc[_idx,9:].values
         return bid, ask, feature_span
 
     def step(self, action):
         assert action in [0, 1, 2], "invalid action"
         self.index += 1
+        if self.mode == 'train':
+            done = (self.index == len(self.train))
+        elif self.mode == 'eval':
+            done = (self.index == len(self.eval))
+
         position = np.zeros(3)
         position[action] = 1
 
@@ -86,15 +97,13 @@ class ForexEnv(Environment):
         self.state = np.append(feature_span,position, axis = 0).astype('float32')
         self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device),
                              torch.tensor(next_bid).to(device), torch.tensor(next_ask).to(device))
-        return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record, False
+        return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record, done
 
     def reset(self):
         if self.mode == 'train':
             to_draw = self.train
         elif self.mode == 'eval':
             to_draw = self.eval
-        elif self.mode == 'test':
-            to_draw = self.test
         n = np.random.choice(len(to_draw))
         self.index = to_draw[n]
 
@@ -113,9 +122,9 @@ class ForexEnv(Environment):
 ### test
 if __name__=='__main__':
     nsteps = 5
-    np.random.seed(0)
+    np.random.seed(448)
 
-    env = ForexEnv()
+    env = ForexEnv(mode = 'train')
     time, obs, price = env.reset()
     t = 0
     print(time)

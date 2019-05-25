@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime
 
-def CreateFeature(cur, lag):
-    Pad = pd.read_csv('PadData_v2.csv')
+def gen_cols(Pad, cur, lag):
     currency = list(np.sort(Pad['currency pair'].unique()))
     tmp = Pad[Pad['currency pair'] == cur].sort_values(by=['timestamp'])
     for i in range(1,lag+1):
@@ -32,8 +31,54 @@ def CreateFeature(cur, lag):
     tmp = tmp.drop(['date', 'dow','hh','mm','ss'], axis=1)
     tmp = tmp.reset_index(drop=True)
     tmp = tmp[lag:]
-    filename = './data/' + cur + '_lag_' + str(lag) + '.csv'
-    tmp.to_csv(filename ,index=False)
+    return tmp
+
+def CreateFeature(cur, lag, week_num):
+    date_list = ['0201','0203','0204','0205','0206','0207',
+                 '0208','0210','0211','0212','0213','0214',
+                 '0215','0217','0218','0219','0220','0221',
+                 '0222','0224','0225','0226','0227','0228','0301']
+    train_week_1 = date_list[0:6]
+    train_week_2 = date_list[6:12]
+    train_week_3 = date_list[12:18]
+    eval_week_1 = date_list[6:9]
+    eval_week_2 = date_list[12:15]
+    eval_week_3 = date_list[18:21]
+
+    if week_num == 1:
+        train_week = train_week_1
+        eval_week = eval_week_1
+    elif week_num == 2:
+        train_week = train_week_2
+        eval_week = eval_week_2
+    else:
+        train_week = train_week_3
+        eval_week = eval_week_3
+
+    Pad_train = None
+    Pad_eval = None
+    for train_date in train_week:
+        filename = '../pad/pad-' + train_date + '.csv'
+        tmp = pd.read_csv(filename)
+        if Pad_train is not None:
+            Pad_train = Pad_train.append(tmp)
+        else:
+            Pad_train = tmp
+
+    final_train = gen_cols(Pad_train,cur,lag)
+    trainname = './data/train_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
+    final_train.to_csv(trainname,index=False)
+
+    for eval_date in eval_week:
+        filename = '../pad/pad-' + eval_date + '.csv'
+        tmp = pd.read_csv(filename)
+        if Pad_eval is not None:
+            Pad_eval = Pad_eval.append(tmp)
+        else:
+            Pad_eval = tmp
+    final_eval = gen_cols(Pad_eval,cur,lag)
+    evalname = './data/eval_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
+    final_eval.to_csv(evalname,index=False)
 
 if __name__=='__main__':
-    CreateFeature('AUDUSD', 16)
+    CreateFeature('AUDUSD', 16, 1)
