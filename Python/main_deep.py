@@ -1,5 +1,6 @@
 import os
 from run_deep import train_eval
+from test_deep import test
 import time
 import argparse
 
@@ -24,12 +25,13 @@ parser.add_argument('--num_of_episode', type=int, default=50)
 
 parser.add_argument('--week_num', type=int, default=1)
 
-
-parser.add_argument('--offset', type=int, default=100)
+parser.add_argument('--model_path', type=str, default='deep/best_model_AUDUSD1557014256.757289.pth')
+parser.add_argument('--offset', type=int, default=300)
+parser.add_argument('--num_of_test', type=int, default=50)
 
 config = parser.parse_args()
 
 if config.mode == 'train_eval':
     train_eval(config)
 elif config.mode == 'test':
-    pass
+    test(config)

@@ -5,15 +5,12 @@ from tqdm import tqdm
 np.random.seed(1)
 from itertools import count
 
-Pad = pd.read_csv('PadData_v2.csv')
+# Pad = pd.read_csv('PadData_v2.csv')
 # Default
 T = 3617
 m = 16
-to_draw = np.sort(Pad['timestamp'].unique())
-ccy = np.sort(Pad['currency pair'].unique())
-min_history = 1000 # min episode length
 
-def generate_episode(week_num, cur, mode, factor, offset):
+def generate_episode(week_num, cur, mode, min_history, factor, offset):
     date_list = ['0201','0203','0204','0205','0206','0207',
                  '0208','0210','0211','0212','0213','0214',
                  '0215','0217','0218','0219','0220','0221',
@@ -38,7 +35,7 @@ def generate_episode(week_num, cur, mode, factor, offset):
     if mode == 'train':
         Pad = None
         for train_date in train_week:
-            filename = '../pad/pad-' + train_date + '.csv'
+            filename = './pad/pad-' + train_date + '.csv'
             tmp = pd.read_csv(filename)
             if Pad is not None:
                 Pad = Pad.append(tmp)
@@ -47,7 +44,7 @@ def generate_episode(week_num, cur, mode, factor, offset):
     elif mode == 'eval':
         Pad = None
         for eval_date in eval_week:
-            filename = '../pad/pad-' + eval_date + '.csv'
+            filename = './pad/pad-' + eval_date + '.csv'
             tmp = pd.read_csv(filename)
             if Pad is not None:
                 Pad = Pad.append(tmp)
@@ -99,21 +96,21 @@ def draw_train_episode(week_num, m, cur, min_history):
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    to_draw_train = to_draw[:int(to_draw.shape[0]*0.6)]
-    n = np.random.randint(to_draw_train.shape[0] - min_history)
-    target_bid, target_ask, other_bid, other_ask = generate_episode(week_num, cur,'train',0,0)
+    # to_draw_train = to_draw[:int(to_draw.shape[0]*0.6)]
+    # n = np.random.randint(to_draw_train.shape[0] - min_history)
+    target_bid, target_ask, other_bid, other_ask = generate_episode(week_num, cur,'train',min_history,0,0)
     feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return target_bid, target_ask, normalized
 
-def draw_eval_episode(week_num, m, cur, factor, offset):
+def draw_eval_episode(week_num, m, cur, min_history, factor, offset):
     '''
     Input:
         m, number of lag returns z_1,...z_m
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    target_bid, target_ask, other_bid, other_ask = generate_episode(week_num, cur,'eval', factor, offset)
+    target_bid, target_ask, other_bid, other_ask = generate_episode(week_num, cur,'eval', min_history, factor, offset)
     feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return target_bid, target_ask, normalized

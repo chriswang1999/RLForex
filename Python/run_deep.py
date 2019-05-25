@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from utils import draw_train_episode, draw_eval_episode
+from utils_full import draw_train_episode, draw_eval_episode
 
 torch.manual_seed(1)
 
@@ -102,7 +102,8 @@ def train_eval(config):
                 bid = np.zeros((1, 1))
                 previous_action = torch.tensor([0.0])
                 while ask.shape[0] <= config.timespan and bid.shape[0]<=config.timespan:
-                    target_bid, target_ask, feature_span = draw_eval_episode(config.week_num, config.lag, config.currency, config.min_history, j, config.offset)
+                    target_bid, target_ask, feature_span = draw_eval_episode(config.week_num, config.lag, config.currency,
+                                                                             config.min_history, j, config.offset)
                     bid, ask, features = target_bid[config.lag:]*1e3, target_ask[config.lag:]*1e3, feature_span
                 for t in range(config.timespan):  # Don't infinite loop while learning
                     state = feature_span[t]
