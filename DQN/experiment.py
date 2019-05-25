@@ -12,15 +12,19 @@ from agents import RandomAgent
 from agents import DQNAgent
 from agents import Forex_reward_function
 from feature import ForexIdentityFeature
-
+import time
 
 if __name__ == '__main__':
+    cur = 'AUDUSD'
+    reward_path = './'+ cur +'/results/'+ time.strftime("%Y%m%d-%H%M%S") +'/'
+    agent_path = './'+ cur +'/agents/' + time.strftime("%Y%m%d-%H%M%S") +'/'
 
-    reward_path = './results/'
-    agent_path = './agents/'
+    if not os.path.exists(reward_path):
+        os.makedirs(reward_path)
+    if not os.path.exists(agent_path):
+        os.makedirs(agent_path)
 
     env = ForexEnv(mode = 'train')
-
 
     # train dqn agents
     number_seeds = 1
@@ -43,7 +47,7 @@ if __name__ == '__main__':
             discount=0.99,
             target_freq=10,
             verbose=False,
-            print_every=1)
+            print_every=10)
 
         _, _, rewards = live(
             agent=agent,
@@ -51,7 +55,7 @@ if __name__ == '__main__':
             num_episodes=500,
             max_timesteps=96,
             verbose=True,
-            print_every=1)
+            print_every=10)
 
         file_name = '|'.join(['dqn', str(seed)])
         np.save(os.path.join(reward_path, file_name), rewards)

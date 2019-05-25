@@ -40,7 +40,7 @@ def live(agent, environment, num_episodes, max_timesteps,
         observation_data.append(observation_history)
         action_data.append(action_history)
         rewards.append(agent.cummulative_reward)
-        print(action_history)
+        # print(action_history)
 
         if verbose and (episode % print_every == 0):
             print("ep %d,  reward %.2f" % (episode, agent.cummulative_reward))
