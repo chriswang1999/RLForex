@@ -15,12 +15,13 @@ from agents import DQNAgent
 from agents import Forex_reward_function
 from feature import ForexIdentityFeature
 
-def test(agent, environment, max_timesteps):
+def test(agent, environment, max_timesteps, n):
     """
     return observation and action data for one episode
     """
     # observation_history is a list of tuples (observation, termination signal)
-    observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
+    new_env = environment.reset_eval(max_timesteps * n)
+    observation_history = [(new_env[0],new_env[1],new_env[2], False)]
     action_history = []
 
     t = 0
@@ -32,6 +33,7 @@ def test(agent, environment, max_timesteps):
         observation_history.append((timestamp, state, price_record, done))
         t += 1
         done = done or (t == max_timesteps)
+    print(action_history)
 
     return observation_history, action_history
 
@@ -46,7 +48,7 @@ if __name__=='__main__':
     torch.manual_seed(123)
 
     env = ForexEnv(mode = 'eval')
-    eps = 100
+    eps = 23
     rewards = []
 
     agent = DQNAgent(
@@ -60,7 +62,8 @@ if __name__=='__main__':
         observation_history, action_history = test(
             agent=agent,
             environment=env,
-            max_timesteps=3600)
+            max_timesteps=3600,
+            n=e)
         r = torch.sum(agent.get_episode_reward(observation_history, action_history))
         print('reward %.5f' % r)
         rewards.append(r)
