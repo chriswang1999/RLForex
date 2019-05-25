@@ -99,6 +99,24 @@ class ForexEnv(Environment):
                              torch.tensor(next_bid).to(device), torch.tensor(next_ask).to(device))
         return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record, done
 
+    def reset_eval(self, n):
+        if self.mode == 'train':
+            to_draw = self.train
+        elif self.mode == 'eval':
+            to_draw = self.eval
+        self.index = to_draw[n]
+
+        position = np.zeros(3)
+        action = np.random.choice(3)
+        position[action] = 1
+
+        bid, ask, feature_span = self.get_features(self.index)
+        next_bid, next_ask, _ = self.get_features(self.index + 1)
+        self.state = np.append(feature_span,position, axis = 0).astype('float32')
+        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device),
+                             torch.tensor(next_bid).to(device), torch.tensor(next_ask).to(device))
+        return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record
+
     def reset(self):
         if self.mode == 'train':
             to_draw = self.train
