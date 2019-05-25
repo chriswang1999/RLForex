@@ -52,6 +52,6 @@ def test(config):
 
     # Save the csv file
     currency_pair = config.model_path[-27:-21]
-    saved_path = 'deep/result/' + currency_pair + 'shift' +'.csv'
+    saved_path = 'deep/result/' + currency_pair + '_week_' + str(config.week_num) +'.csv'
     print('Saving the csv file ...')
     df.to_csv(saved_path, index = False)

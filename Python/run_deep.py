@@ -51,11 +51,11 @@ def train_eval(config):
     rewards_over_time = []
 
     NUM_OF_EVAL_DATA = config.num_of_eval
-    PATH = './deep/best_model_'+ config.currency + str(time.time()) + '.pth'
+    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + str(time.time()) + '.pth'
 
     best_accumulative_return = -1000
 
-    for  epoch in range(config.num_of_epoch):
+    for epoch in range(config.num_of_epoch):
         for i_episode in range(config.num_of_episode):
             ask = np.zeros((1, 1))
             bid = np.zeros((1, 1))
