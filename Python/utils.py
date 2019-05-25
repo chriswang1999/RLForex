@@ -13,7 +13,53 @@ to_draw = np.sort(Pad['timestamp'].unique())
 ccy = np.sort(Pad['currency pair'].unique())
 min_history = 1000 # min episode length
 
-def generate_episode(n,cur):
+def generate_episode(week_num, cur, mode, factor, offset):
+    date_list = ['0201','0203','0204','0205','0206','0207',
+                 '0208','0210','0211','0212','0213','0214',
+                 '0215','0217','0218','0219','0220','0221',
+                 '0222','0224','0225','0226','0227','0228','0301']
+    train_week_1 = date_list[0:6]
+    train_week_2 = date_list[6:12]
+    train_week_3 = date_list[12:18]
+    eval_week_1 = date_list[6:9]
+    eval_week_2 = date_list[12:15]
+    eval_week_3 = date_list[18:21]
+
+    if week_num == 1:
+        train_week = train_week_1
+        eval_week = eval_week_1
+    elif week_num == 2:
+        train_week = train_week_2
+        eval_week = eval_week_2
+    elif week_num == 3:
+        train_week = train_week_3
+        eval_week = eval_week_3
+
+    if mode == 'train':
+        Pad = None
+        for train_date in train_week:
+            filename = '../pad/pad-' + train_date + '.csv'
+            tmp = pd.read_csv(filename)
+            if Pad is not None:
+                Pad = Pad.append(tmp)
+            else:
+                Pad = tmp
+    elif mode == 'eval':
+        Pad = None
+        for eval_date in eval_week:
+            filename = '../pad/pad-' + eval_date + '.csv'
+            tmp = pd.read_csv(filename)
+            if Pad is not None:
+                Pad = Pad.append(tmp)
+            else:
+                Pad = tmp
+
+    to_draw = np.sort(Pad['timestamp'].unique())
+    ccy = np.sort(Pad['currency pair'].unique())
+    if mode == 'train':
+        n = np.random.randint(to_draw.shape[0] - min_history)
+    elif mode == 'eval':
+        n = (factor * 3600) % int(to_draw.shape[0]- min_history) + offset
     _max = to_draw.shape[0]
     _end = min(n+T, _max)
     timeframe = to_draw[n:_end]
@@ -46,20 +92,7 @@ def get_features(target_bid, target_ask, other_bid, other_ask, m):
         feature_span = np.append(feature_span, features(other_ask[:,j],m), axis = 1)
     return feature_span
 
-def draw_episode(m, cur, min_history):
-    '''
-    Input:
-        m, number of lag returns z_1,...z_m
-        cur, currency pair that we target to trade
-        min_history, min length of a valid episode
-    '''
-    n = np.random.randint(to_draw.shape[0] - min_history)
-    target_bid, target_ask, other_bid, other_ask = generate_episode(n,cur)
-    feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
-    normalized = (feature_span-feature_span.mean())/feature_span.std()
-    return target_bid, target_ask, normalized
-
-def draw_train_episode(m, cur, min_history):
+def draw_train_episode(week_num, m, cur, min_history):
     '''
     Input:
         m, number of lag returns z_1,...z_m
@@ -68,35 +101,20 @@ def draw_train_episode(m, cur, min_history):
     '''
     to_draw_train = to_draw[:int(to_draw.shape[0]*0.6)]
     n = np.random.randint(to_draw_train.shape[0] - min_history)
-    target_bid, target_ask, other_bid, other_ask = generate_episode(n,cur)
+    target_bid, target_ask, other_bid, other_ask = generate_episode(week_num, cur,'train',0,0)
     feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return target_bid, target_ask, normalized
 
-def draw_test_episode(m, cur, min_history):
+def draw_eval_episode(week_num, m, cur, factor, offset):
     '''
     Input:
         m, number of lag returns z_1,...z_m
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    to_draw_test = to_draw[int(to_draw.shape[0]*0.8):]
-    n = np.random.randint(to_draw_test.shape[0] - min_history)
-    n = 1
-    target_bid, target_ask, other_bid, other_ask = generate_episode(n,cur)
+    target_bid, target_ask, other_bid, other_ask = generate_episode(week_num, cur,'eval', factor, offset)
     feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return target_bid, target_ask, normalized
 
-def draw_eval_episode(m, cur, min_history,  offset):
-    '''
-    Input:
-        m, number of lag returns z_1,...z_m
-        cur, currency pair that we target to trade
-        min_history, min length of a valid episode
-    '''
-    n = int(to_draw.shape[0] * 0.6) + (offset * 3000 % (int(to_draw.shape[0] * 0.8) - int(to_draw.shape[0]*0.6)))
-    target_bid, target_ask, other_bid, other_ask = generate_episode(n,cur)
-    feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
-    normalized = (feature_span-feature_span.mean())/feature_span.std()
-    return target_bid, target_ask, normalized
