@@ -42,7 +42,7 @@ def test(agent, environment, max_timesteps, n):
 #     df= pd.read_csv(filename).reset_index(drop = True)
 
 if __name__=='__main__':
-    dqn_model_path = './agents/dqn|0.pt'
+    dqn_model_path = './AUDUSD/agents/20190526-174236/dqn|0.pt'
 
     np.random.seed(321)
     torch.manual_seed(123)

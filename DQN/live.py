@@ -19,7 +19,9 @@ def live(agent, environment, num_episodes, max_timesteps,
     
     for episode in range(num_episodes):
         agent.reset_cumulative_reward()
-        observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
+        new_env = environment.reset()
+        observation_history = [(new_env[0],new_env[1],new_env[2], False)]
+        # observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
         action_history = []
         
         t = 0
@@ -40,10 +42,12 @@ def live(agent, environment, num_episodes, max_timesteps,
         observation_data.append(observation_history)
         action_data.append(action_history)
         rewards.append(agent.cummulative_reward)
-        # print(action_history)
 
         if verbose and (episode % print_every == 0):
-            print("ep %d,  reward %.2f" % (episode, agent.cummulative_reward))
+            print("ep %d,  reward %.5f" % (episode, agent.cummulative_reward))
+            print('short', action_history.count(0))
+            print('neutral', action_history.count(1))
+            print('long', action_history.count(2))
 
     return observation_data, action_data, rewards
 
