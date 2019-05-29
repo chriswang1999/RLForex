@@ -105,4 +105,4 @@ ENV/
 tests/reports/
 Python/pad/
 *.csv
-
+*.pth
