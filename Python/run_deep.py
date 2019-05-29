@@ -62,7 +62,7 @@ def train_eval(config):
             previous_action = torch.tensor([0.0])
             while ask.shape[0] <= config.timespan and bid.shape[0]<= config.timespan:
                 target_bid, target_ask, feature_span = draw_train_episode(config.week_num, config.lag, config.currency, config.min_history)
-                bid, ask, features = target_bid[config.lag:]*1e3, target_ask[config.lag:]*1e3, feature_span
+                bid, ask, features = target_bid*1e3, target_ask*1e3, feature_span
             for t in range(config.timespan):  # Don't infinite loop while learning
                 state = feature_span[t]
                 save_action = policy(torch.from_numpy(state).float(),0.1*previous_action)

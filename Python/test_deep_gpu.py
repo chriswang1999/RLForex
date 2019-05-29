@@ -4,7 +4,7 @@ import torch
 
 from run_deep import Policy
 #*********************************#
-from utils_full import draw_eval_episode
+from utils_deep import draw_eval_episode
 #*********************************#
 
 
@@ -31,7 +31,7 @@ def test(config):
                                                                          config.min_history, j, config.offset)
                 # target_bid, target_ask, feature_span = draw_eval_episode(config.lag, config.currency,
                 #                                                          config.min_history, j, config.offset)
-                bid, ask, feature_span = target_bid[config.lag:]*1e3, target_ask[config.lag:]*1e3, feature_span
+                bid, ask, feature_span = target_bid*1e3, target_ask*1e3, feature_span
             for t in range(config.timespan):  # Don't infinite loop while learning
                 state = feature_span[t]
                 save_action = policy(torch.from_numpy(state).to(device).float(),0.1*previous_action).to(device)

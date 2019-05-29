@@ -9,6 +9,8 @@ torch.manual_seed(1)
 T = 3617
 m = 16
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def get_file(week_num, lag, cur, mode):
     final = None
     if mode == 'train':
@@ -39,9 +41,9 @@ def draw_train_episode(week_num, lag, cur, min_history):
     train = final[final.timestamp.isin(timeframe)]
     target_bid = train['bid price'].values
     target_ask = train['ask price'].values
-    feature_span = train.iloc[:,9:].values
+    feature_span = train.iloc[:,-256:].values
     normalized = (feature_span-feature_span.mean())/feature_span.std()
-    return target_bid, target_ask, normalized
+    return torch.tensor(target_bid).to(device), torch.tensor(target_ask).to(device), torch.tensor(normalized).to(device)
 
 def draw_eval_episode(week_num, lag, cur, min_history, factor, offset):
     '''
@@ -52,14 +54,14 @@ def draw_eval_episode(week_num, lag, cur, min_history, factor, offset):
     '''
     final = get_file(week_num, lag, cur, 'eval')
     to_draw = np.sort(final['timestamp'].unique())
-    n = np.random.randint(to_draw.shape[0] - min_history)
+    n = (factor * 3600) % int(to_draw.shape[0]- min_history) + offset
     _max = to_draw.shape[0]
     _end = min(n+T, _max)
     timeframe = to_draw[n:_end]
     eval = final[final.timestamp.isin(timeframe)]
     target_bid = eval['bid price'].values
     target_ask = eval['ask price'].values
-    feature_span = eval.iloc[:,10:].values
+    feature_span = eval.iloc[:,-256:].values
     normalized = (feature_span-feature_span.mean())/feature_span.std()
-    return target_bid, target_ask, normalized
+    return torch.tensor(target_bid).to(device), torch.tensor(target_ask).to(device), torch.tensor(normalized).to(device)
 

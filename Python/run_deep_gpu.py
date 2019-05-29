@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from utils_full import draw_train_episode, draw_eval_episode
+from utils_deep import draw_train_episode, draw_eval_episode
 
 torch.manual_seed(1)
 
@@ -58,15 +58,15 @@ def train_eval(config):
 
     for epoch in range(config.num_of_epoch):
         for i_episode in range(config.num_of_episode):
-            ask = np.zeros((1, 1))
-            bid = np.zeros((1, 1))
+            ask = torch.zeros((1, 1)).to(device)
+            bid = torch.zeros((1, 1)).to(device)
             previous_action = torch.tensor([0.0]).to(device)
-            while ask.shape[0] <= config.timespan and bid.shape[0]<= config.timespan:
+            while ask.size()[0] <= config.timespan and bid.size()[0]<= config.timespan:
                 target_bid, target_ask, feature_span = draw_train_episode(config.week_num, config.lag, config.currency, config.min_history)
-                bid, ask, features = target_bid[config.lag:]*1e3, target_ask[config.lag:]*1e3, feature_span
+                bid, ask, features = target_bid*1e3, target_ask*1e3, feature_span
             for t in range(config.timespan):  # Don't infinite loop while learning
                 state = feature_span[t]
-                save_action = policy(torch.from_numpy(state).to(device).float(),0.1*previous_action).to(device)
+                save_action = policy(state.float(),0.1*previous_action).to(device)
 
                 if t == config.timespan-1:
                     save_action = 0
@@ -78,7 +78,7 @@ def train_eval(config):
                     price = ask[t]
                 elif action < 0:
                     price = bid[t]
-                reward = torch.sum(-1 * action * price).to(device)
+                reward = torch.sum(torch.tensor(-1.).float() * action * price.float()).to(device)
 
                 policy.rewards += reward
 
@@ -101,14 +101,14 @@ def train_eval(config):
                 current_reward = 0
                 ask = np.zeros((1, 1))
                 bid = np.zeros((1, 1))
-                previous_action = torch.tensor([0.0])
+                previous_action = torch.tensor([0.0]).to(device)
                 while ask.shape[0] <= config.timespan and bid.shape[0]<=config.timespan:
                     target_bid, target_ask, feature_span = draw_eval_episode(config.week_num, config.lag, config.currency,
                                                                              config.min_history, j, config.offset)
-                    bid, ask, features = target_bid[config.lag:]*1e3, target_ask[config.lag:]*1e3, feature_span
+                    bid, ask, features = target_bid*1e3, target_ask*1e3, feature_span
                 for t in range(config.timespan):  # Don't infinite loop while learning
                     state = feature_span[t]
-                    save_action = policy(torch.from_numpy(state).to(device).float(),0.1*previous_action)
+                    save_action = policy(state.float(),0.1*previous_action)
 
                     if t == config.timespan-1:
                         save_action = 0
@@ -119,7 +119,7 @@ def train_eval(config):
                         price = ask[t]
                     elif action < 0:
                         price = bid[t]
-                    reward = torch.sum(-1 * action * price).to(device)
+                    reward = torch.sum(torch.tensor(-1.).float() * action * price.float()).to(device)
                     accumulative_reward_test += reward
                     current_reward  += reward
                     previous_action = save_action
