@@ -198,7 +198,9 @@ class DQNAgent(Agent):
         """
         reward_history = self.get_episode_reward(observation_history, action_history)
 #        self.cummulative_reward += np.sum(reward_history)
+#         print ('The reward history is ', reward_history)
         self.cummulative_reward += torch.sum(reward_history).to(device)
+        # print ('The cumulative reward after summing up the reward history ', self.cummulative_reward)
 
         tau = len(action_history)
 #        feature_history = np.zeros((tau+1, self.feature_extractor.dimension))
@@ -316,7 +318,7 @@ def Forex_reward_function(observation_history, action_history):
         prev_position = torch.tensor(0).to(device)
     else:
         prev_position = action_history[-2]-1
-    reward = position.float() * (mid_next - mid_now) - torch.tensor(1.) * spread * torch.abs(position - prev_position).float()
+    reward = position.float() * (mid_next - mid_now) - torch.tensor(0.) * spread * torch.abs(position - prev_position).float()
     # time_old, state_old, price_old, terminated_old = observation_history[-2]
     # b_now, a_now = price
     # b_old, a_old = price_old

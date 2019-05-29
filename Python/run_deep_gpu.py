@@ -47,6 +47,9 @@ policy = Policy()
 policy.to(device)
 
 def train_eval(config):
+    #change the optimizer
+    #add in dropout
+    #use new data from Iris
     optimizer = optim.SGD(policy.parameters(), lr= config.init_lr)
     # eps = np.finfo(np.float32).eps.item()
     rewards_over_time = []

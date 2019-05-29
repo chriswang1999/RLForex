@@ -52,7 +52,7 @@ class ForexEnv(Environment):
         none
     """
 
-    def __init__(self, cur = 'AUDUSD', lag = 16, min_history = 1000, mode = 'train', week = 1):
+    def __init__(self, cur = 'EURUSD', lag = 16, min_history = 1000, mode = 'train', week = 1):
         self.ccy = cur
         self.lag = lag
         self.min_history = min_history
@@ -127,6 +127,23 @@ class ForexEnv(Environment):
 
         position = np.zeros(3)
         action = np.random.choice(3)
+        position[action] = 1
+
+        bid, ask, feature_span = self.get_features(self.index)
+        next_bid, next_ask, _ = self.get_features(self.index + 1)
+        self.state = np.append(feature_span,position, axis = 0).astype('float32')
+        self.price_record = (torch.tensor(bid).to(device),torch.tensor(ask).to(device),
+                             torch.tensor(next_bid).to(device), torch.tensor(next_ask).to(device))
+        return torch.tensor(self.index).to(device), torch.tensor(self.state).to(device), self.price_record
+
+    def reset_fixed(self, number):
+        to_draw = self.eval
+        assert(number < len(to_draw))
+        n = number
+        self.index = to_draw[n]
+
+        position = np.zeros(3)
+        action = 1
         position[action] = 1
 
         bid, ask, feature_span = self.get_features(self.index)
