@@ -30,20 +30,20 @@ def gen_list():
     cur = list(set([elem[29:35]for elem in memory]))
     return cur, date
 
-def combine_lp(cur_list,date_list,lp_list = ['LP-1','LP-2','LP-3','LP-4','LP-5']):
+def merge_date(cur_list,date_list,lp_list):
     count = 0
     for date in date_list:
-        total = None
+        current = None
         for cur in cur_list:
-            current = None
             for lp in lp_list:
+                count += 1
                 filename = 'fulldata/renamed/' + lp + '-STRM-' +lp[-1] + '-' + cur + '-' + date + '.csv'
                 print(filename)
                 if os.path.exists(filename):
-                    count += 1
                     tmp = pd.read_csv(filename, low_memory=False)
+                    tmp = tmp.sort_values(by=['time'], ascending=True)
                     tmp['timestamp'] = tmp['time'].astype(str).str[:-4]
-                    tmp = tmp.drop_duplicates(['timestamp','currency pair'], 'last')
+                    tmp = tmp.drop_duplicates(['timestamp','currency pair','provider'], 'last')
                     tmp = tmp[tmp['status'] == 'Active']
                     if current is not None:
                         current = current.append(tmp)
@@ -51,65 +51,114 @@ def combine_lp(cur_list,date_list,lp_list = ['LP-1','LP-2','LP-3','LP-4','LP-5']
                         current = tmp
                 else:
                     print('no such file')
-            if total is not None:
-                total = total.append(current)
-            else:
-                total = current
-
-        bid_best = total
-        bid_best['_ind'] = bid_best['timestamp'] + "+" + bid_best['currency pair']
-        bid_best['bid price'] = pd.to_numeric(bid_best['bid price'], errors = 'coerce')
-        ask_best = total
-        ask_best['_ind'] = ask_best['timestamp'] + "+" + ask_best['currency pair']
-        ask_best['ask price'] = pd.to_numeric(ask_best['ask price'], errors = 'coerce')
-
-        bid_best = bid_best.sort_values(by=['bid price'], ascending=True)
-        bid_best = bid_best.drop_duplicates(['_ind'], 'last')
-        ask_best = ask_best.sort_values(by=['ask price'], ascending=False)
-        ask_best = ask_best.drop_duplicates(['_ind'], 'last')
-        bid_best = bid_best.rename(index=str, columns={'provider':'bid provider'})
-        bid_best = bid_best.drop(columns=['stream','time', 'ask price','ask volume','guid','tier','status','quote type','currency pair'])
-        ask_best = ask_best.rename(index=str, columns={'provider':'ask provider'})
-        ask_best = ask_best.drop(columns=['stream', 'time', 'bid price','bid volume','guid','tier','status','quote type','timestamp'])
-        best = bid_best.set_index('_ind').join(ask_best.set_index('_ind')).reset_index(drop=True)
-        best = best.sort_values(by=['currency pair', 'timestamp'], ascending=True)
-        best = best[best['bid price'] != 0]
-        best = best[best['ask price'] != 0]
-        best = best.dropna()
-        newname = 'fulldata/best/' + 'best-' + date + '.csv'
-        best.to_csv(newname,index=False)
+        current = current[current['bid price'] != 0]
+        current = current[current['ask price'] != 0]
+        newname = 'fulldata/merge/' + 'merge-' + date + '.csv'
+        current.to_csv(newname,index=False)
     print(count, "files in total")
 
 def pad_data():
-    for filename in glob.glob("fulldata/best/*.csv"):
-        tmp = pd.read_csv(filename)
+    for filename in glob.glob("fulldata/merge/*.csv"):
+        tmp = pd.read_csv(filename,low_memory=False)
         print('processing', filename)
-        tmp['pad'] = [0]*len(tmp['bid provider'])
-        pad_col = ['currency pair','timestamp']
+        pad_col = ['timestamp','currency pair','provider']
+        # uniquetime = tmp[tmp['currency pair'].isin(focus_cur)]
         time = np.sort(tmp['timestamp'].unique()).tolist()
-        pad = pd.DataFrame(columns = pad_col)
+        pad = None
         for cur in tmp['currency pair'].unique():
-            mycur = pd.DataFrame(columns = pad_col)
-            mycur['currency pair'] = [cur]*len(time)
-            mycur['timestamp'] = time
-            pad = pad.append(mycur, ignore_index=True)
-        tmp['_ind'] = tmp['timestamp'] + "+" + tmp['currency pair']
-        pad['_ind'] = pad['timestamp'] + "+" + pad['currency pair']
-        tmp = tmp.drop(columns=['timestamp','currency pair'])
-        pad = pad.set_index('_ind').join(tmp.set_index('_ind')).reset_index(drop=True)
-        pad[['pad']] = pad[['pad']].fillna(value=1)
-        pad = pad.fillna(method='pad')
-        print('pad ratio', pad[pad['pad']==1].shape[0]/pad.shape[0])
-        new_name = 'fulldata/pad/pad'+filename[18:]
+            getlp = tmp[tmp['currency pair'] == cur]
+            for lp in getlp['provider'].unique():
+                to_pad = getlp[getlp['provider'] == lp]
+                to_pad['pad'] = [0]*len(to_pad['provider'])
+
+                cur_lp = pd.DataFrame(columns = pad_col)
+                cur_lp['timestamp'] = time
+                cur_lp['currency pair'] = [cur]*len(time)
+                cur_lp['provider'] = [lp]*len(time)
+
+                cur_lp['_ind'] = cur_lp['timestamp'] + "+" + cur_lp['currency pair'] + "+" + cur_lp['provider']
+                to_pad['_ind'] = to_pad['timestamp'] + "+" + to_pad['currency pair'] + "+" + to_pad['provider']
+                to_pad = to_pad.drop(columns=['timestamp','currency pair','provider','time'])
+                cur_lp = cur_lp.set_index('_ind').join(to_pad.set_index('_ind')).reset_index(drop=True)
+                cur_lp[['pad']] = cur_lp[['pad']].fillna(value=1)
+                cur_lp = cur_lp.fillna(method='pad')
+                print(cur, lp, 'pad ratio', cur_lp[cur_lp['pad']==1].shape[0]/cur_lp.shape[0])
+                if pad is not None:
+                    pad = pad.append(cur_lp, ignore_index=True)
+                else:
+                    pad = cur_lp
+        new_name = 'fulldata/pad/pad'+filename[20:]
+        pad.to_csv(new_name,index=False)
+
+def combine_lp(cur_list,date_list):
+    for date in date_list:
+        filename = 'fulldata/pad/pad-' + date + '.csv'
+        print(filename)
+        if os.path.exists(filename):
+            all_lp = pd.read_csv(filename, low_memory=False)
+            final = None
+            for cur in cur_list:
+                this_cur = all_lp[all_lp['currency pair'] ==  cur]
+                bid_best = this_cur
+                bid_best['_ind'] = bid_best['timestamp'] + "+" + bid_best['currency pair']
+                bid_best['bid price'] = pd.to_numeric(bid_best['bid price'], errors = 'coerce')
+                ask_best = this_cur
+                ask_best['_ind'] = ask_best['timestamp'] + "+" + ask_best['currency pair']
+                ask_best['ask price'] = pd.to_numeric(ask_best['ask price'], errors = 'coerce')
+                bid_best = bid_best.sort_values(by=['bid price'], ascending=True)
+                bid_best = bid_best.drop_duplicates(['_ind'], 'last')
+                ask_best = ask_best.sort_values(by=['ask price'], ascending=False)
+                ask_best = ask_best.drop_duplicates(['_ind'], 'last')
+                bid_best = bid_best.rename(index=str, columns={'provider':'bid provider'})
+                bid_best = bid_best.rename(index=str, columns={'pad':'bid pad'})
+                ask_best = ask_best.rename(index=str, columns={'provider':'ask provider'})
+                ask_best = ask_best.rename(index=str, columns={'pad':'ask pad'})
+                bid_best = bid_best.drop(columns=['stream', 'ask price','ask volume','guid','tier','status','quote type','currency pair','timestamp'])
+                ask_best = ask_best.drop(columns=['stream', 'bid price','bid volume','guid','tier','status','quote type'])
+                best = bid_best.set_index('_ind').join(ask_best.set_index('_ind')).reset_index(drop=True)
+                best = best.sort_values(by=['currency pair', 'timestamp'], ascending=True)
+                if final is not None:
+                    final = final.append(best)
+                else:
+                    final = best
+            newname = 'fulldata/final/' + 'final-' + date + '.csv'
+            final.to_csv(newname,index=False)
+        else:
+            print('no such file')
+
+def clean_nan(cur_list):
+    for filename in glob.glob("fulldata/archive/*.csv"):
+        tmp = pd.read_csv(filename,low_memory=False)
+        print('processing', filename)
+        tmp = tmp[tmp['bid price'].notnull() & tmp['ask price'].notnull()]
+
+        pad = None
+        time = []
+        for cur in cur_list:
+            current = tmp[tmp['currency pair'] == cur]
+            timeframe = np.sort(tmp['timestamp'].unique()).tolist()
+            time.append(timeframe)
+        base = set(time[0])
+        for i in range(1, len(time)):
+            base = base.intersection(set(time[i]))
+        base = list(base)
+
+        pad = tmp[tmp.timestamp.isin(base)]
+        new_name = 'fulldata/final/final'+filename[22:]
+        print(pad.isnull().any().any())
         pad.to_csv(new_name,index=False)
 
 
 if __name__ == '__main__':
     # rename()
-    # cur = ['AUDUSD', 'USDCAD', 'EURUSD', 'GBPUSD', 'NZDUSD', 'USDJPY', 'USDCHF', 'USDSEK']
-    # date = ['0201','0203','0204','0205','0206','0207',
-    #         '0208','0210','0211','0212','0213','0214',
-    #         '0215','0217','0218','0219','0220','0221',
-    #         '0222','0224','0225','0226','0227','0228','0301']
+    cur = ['AUDUSD', 'USDCAD', 'EURUSD', 'GBPUSD', 'NZDUSD', 'USDJPY', 'USDCHF', 'USDSEK']
+    focus_cur = ['AUDUSD', 'EURUSD','USDJPY']
+    date = ['0201','0203','0204','0205','0206','0207',
+            '0208','0210','0211','0212','0213','0214',
+            '0215','0217','0218','0219','0220','0221',
+            '0222','0224','0225','0226','0227','0228','0301']
+    lp_list = ['LP-1','LP-2','LP-3','LP-4','LP-5']
+    # merge_date(cur,date,lp_list)
+    # pad_data()
     # combine_lp(cur,date)
-    pad_data()
+    clean_nan(cur)
