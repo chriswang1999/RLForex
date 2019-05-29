@@ -15,7 +15,7 @@ from feature import ForexIdentityFeature
 import time
 
 if __name__ == '__main__':
-    cur = 'AUDUSD'
+    cur = 'EURUSD'
     reward_path = './'+ cur +'/results/'+ time.strftime("%Y%m%d-%H%M%S") +'/'
     agent_path = './'+ cur +'/agents/' + time.strftime("%Y%m%d-%H%M%S") +'/'
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
             action_set=[0, 1, 2],
             reward_function=functools.partial(Forex_reward_function),
             feature_extractor=ForexIdentityFeature(),
-            hidden_dims=[10, 10],
+            hidden_dims=[50, 50],
             learning_rate=5e-4,
             buffer_size=50000,
             # batch_size=16,

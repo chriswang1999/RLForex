@@ -11,16 +11,22 @@ T = 3617
 m = 16
 
 def generate_episode(week_num, cur, mode, min_history, factor, offset):
-    date_list = ['0201','0203','0204','0205','0206','0207',
-                 '0208','0210','0211','0212','0213','0214',
-                 '0215','0217','0218','0219','0220','0221',
-                 '0222','0224','0225','0226','0227','0228','0301']
-    train_week_1 = date_list[0:6]
-    train_week_2 = date_list[6:12]
-    train_week_3 = date_list[12:18]
-    eval_week_1 = date_list[6:9]
-    eval_week_2 = date_list[12:15]
-    eval_week_3 = date_list[18:21]
+    date_list = ['0201','0203','0204','0205',
+                 '0206','0207','0208','0210',
+                 '0211','0212','0213','0214',
+                 '0215','0217','0218','0219',
+                 '0220','0221','0222','0224',
+                 '0225','0226','0227','0228','0301']
+    train_week_1 = date_list[0:4]
+    train_week_2 = date_list[4:8]
+    train_week_3 = date_list[8:12]
+    train_week_4 = date_list[12:16]
+    train_week_5 = date_list[16:20]
+    eval_week_1 = date_list[4:6]
+    eval_week_2 = date_list[8:10]
+    eval_week_3 = date_list[12:14]
+    eval_week_4 = date_list[16:18]
+    eval_week_5 = date_list[20:22]
 
     if week_num == 1:
         train_week = train_week_1
@@ -31,9 +37,15 @@ def generate_episode(week_num, cur, mode, min_history, factor, offset):
     elif week_num == 3:
         train_week = train_week_3
         eval_week = eval_week_3
+    elif week_num == 4:
+        train_week = train_week_4
+        eval_week = eval_week_4
+    elif week_num == 5:
+        train_week = train_week_5
+        eval_week = eval_week_5
 
+    Pad = None
     if mode == 'train':
-        Pad = None
         for train_date in train_week:
             filename = './pad/pad-' + train_date + '.csv'
             tmp = pd.read_csv(filename)
@@ -42,7 +54,6 @@ def generate_episode(week_num, cur, mode, min_history, factor, offset):
             else:
                 Pad = tmp
     elif mode == 'eval':
-        Pad = None
         for eval_date in eval_week:
             filename = './pad/pad-' + eval_date + '.csv'
             tmp = pd.read_csv(filename)
@@ -51,6 +62,7 @@ def generate_episode(week_num, cur, mode, min_history, factor, offset):
             else:
                 Pad = tmp
 
+    Pad = Pad.sort_values(by=['currency pair','timestamp'])
     to_draw = np.sort(Pad['timestamp'].unique())
     ccy = np.sort(Pad['currency pair'].unique())
     if mode == 'train':

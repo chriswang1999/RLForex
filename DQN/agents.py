@@ -127,12 +127,13 @@ class MLP(nn.Module):
     def __init__(self, dimensions):
         super(MLP, self).__init__()
         self.layers = nn.ModuleList()
+        self.dropout = nn.Dropout(p=0.2)
         for i in range(len(dimensions)-1):
             self.layers.append(nn.Linear(dimensions[i], dimensions[i+1]))
 
     def forward(self, x):
         for l in self.layers[:-1]:
-            x = nn.functional.elu(l(x))
+            x = self.dropout(nn.functional.elu(l(x)))
         x = self.layers[-1](x)
         return x
 

@@ -25,7 +25,7 @@ parser.add_argument('--num_of_episode', type=int, default=50)
 
 parser.add_argument('--week_num', type=int, default=1)
 
-parser.add_argument('--model_path', type=str, default='deep/best_model_AUDUSD1557014256.757289.pth')
+parser.add_argument('--model_path', type=str, default='best_model_AUDUSD_small.pth')
 parser.add_argument('--offset', type=int, default=300)
 parser.add_argument('--num_of_test', type=int, default=50)
 
