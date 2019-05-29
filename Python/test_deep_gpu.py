@@ -34,7 +34,7 @@ def test(config):
                 bid, ask, feature_span = target_bid*1e3, target_ask*1e3, feature_span
             for t in range(config.timespan):  # Don't infinite loop while learning
                 state = feature_span[t]
-                save_action = policy(torch.from_numpy(state).to(device).float(),0.1*previous_action).to(device)
+                save_action = policy(state.float(),0.1*previous_action).to(device)
 
                 if t == config.timespan-1:
                     save_action = 0
@@ -45,7 +45,7 @@ def test(config):
                     price = ask[t]
                 elif action < 0:
                     price = bid[t]
-                reward = torch.sum(-1 * action * price).to(device)
+                reward = torch.sum(torch.tensor(-1.).float() * action * price.float()).to(device)
                 accumulative_reward_test += reward
                 current_reward  += reward
 
