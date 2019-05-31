@@ -21,11 +21,13 @@ trainname = './data/train_' + cur + '_lag_' + str(lag) + '_week' + str(week_num)
 if os.path.exists(trainname) == False:
     CreateFeature(cur, lag, week_num)
 _train = pd.read_csv(trainname).reset_index(drop = True)
+to_draw_train = np.sort(_train['timestamp'].unique())
 
 evalname = './data/eval_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
 if os.path.exists(evalname) == False:
     CreateFeature(cur, lag, week_num)
 _eval= pd.read_csv(evalname).reset_index(drop = True)
+to_draw_eval = np.sort(_eval['timestamp'].unique())
 
 
 def draw_train_episode(week_num, lag, cur, min_history):
@@ -35,13 +37,11 @@ def draw_train_episode(week_num, lag, cur, min_history):
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    final = _train
-    to_draw = np.sort(final['timestamp'].unique())
-    n = np.random.randint(to_draw.shape[0] - min_history)
-    _max = to_draw.shape[0]
+    n = np.random.randint(to_draw_train.shape[0] - min_history)
+    _max = to_draw_train.shape[0]
     _end = min(n+T, _max)
-    timeframe = to_draw[n:_end]
-    train = final[final.timestamp.isin(timeframe)]
+    timeframe = to_draw_train[n:_end]
+    train = _train[_train.timestamp.isin(timeframe)]
     target_bid = train['bid price'].values
     target_ask = train['ask price'].values
     feature_span = train.iloc[:,-256:].values
@@ -55,13 +55,12 @@ def draw_eval_episode(week_num, lag, cur, min_history, factor, offset):
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    final = _eval
-    to_draw = np.sort(final['timestamp'].unique())
-    n = (factor * 3600) % int(to_draw.shape[0]- min_history) + offset
-    _max = to_draw.shape[0]
+    to_draw_eval = np.sort(_eval['timestamp'].unique())
+    n = (factor * 3600) % int(to_draw_eval.shape[0]- min_history) + offset
+    _max = to_draw_eval.shape[0]
     _end = min(n+T, _max)
-    timeframe = to_draw[n:_end]
-    eval = final[final.timestamp.isin(timeframe)]
+    timeframe = to_draw_eval[n:_end]
+    eval = _eval[_eval.timestamp.isin(timeframe)]
     target_bid = eval['bid price'].values
     target_ask = eval['ask price'].values
     feature_span = eval.iloc[:,-256:].values
