@@ -6,24 +6,27 @@ from pro_data_drl import CreateFeature
 np.random.seed(1)
 torch.manual_seed(1)
 
-T = 3617
-m = 16
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def get_file(week_num, lag, cur, mode):
-    final = None
-    if mode == 'train':
-        trainname = './data/train_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
-        if os.path.exists(trainname) == False:
-            CreateFeature(cur, lag, week_num)
-        final = pd.read_csv(trainname).reset_index(drop = True)
-    elif mode == 'eval':
-        evalname = './data/eval_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
-        if os.path.exists(evalname) == False:
-            CreateFeature(cur, lag, week_num)
-        final = pd.read_csv(evalname).reset_index(drop = True)
-    return final
+### Change at each time
+week_num = 1
+lag = 32
+cur = 'AUDUSD'
+T = 3633
+### Change at each time
+
+_train = None
+_eval = None
+trainname = './data/train_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
+if os.path.exists(trainname) == False:
+    CreateFeature(cur, lag, week_num)
+_train = pd.read_csv(trainname).reset_index(drop = True)
+
+evalname = './data/eval_' + cur + '_lag_' + str(lag) + '_week' + str(week_num) + '.csv'
+if os.path.exists(evalname) == False:
+    CreateFeature(cur, lag, week_num)
+_eval= pd.read_csv(evalname).reset_index(drop = True)
+
 
 def draw_train_episode(week_num, lag, cur, min_history):
     '''
@@ -32,7 +35,7 @@ def draw_train_episode(week_num, lag, cur, min_history):
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    final = get_file(week_num, lag, cur, 'train')
+    final = _train
     to_draw = np.sort(final['timestamp'].unique())
     n = np.random.randint(to_draw.shape[0] - min_history)
     _max = to_draw.shape[0]
@@ -52,7 +55,7 @@ def draw_eval_episode(week_num, lag, cur, min_history, factor, offset):
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    final = get_file(week_num, lag, cur, 'eval')
+    final = _eval
     to_draw = np.sort(final['timestamp'].unique())
     n = (factor * 3600) % int(to_draw.shape[0]- min_history) + offset
     _max = to_draw.shape[0]
