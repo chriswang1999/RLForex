@@ -4,7 +4,7 @@ import sys
 import time
 import argparse
 
-reward_file = './deep/reward'+ str(time.time()) + '.txt'
+reward_file = './deep/reward_structure2_'+ str(time.time()) + '.txt'
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='train_eval')
@@ -34,9 +34,9 @@ config = parser.parse_args()
 if config.model_structure == 0:
     from run_deep_gpu import train_eval
     from test_deep_gpu import test
-else if config.model_structure == 1:
+elif config.model_structure == 1:
     from run_deep_gpu_structure_2 import train_eval
-    from test_deep_gpu_stucture_2 import test
+    from test_deep_gpu import test
 else:
     raise Exception('Model structure has to be specified')
 if config.mode == 'train_eval':
