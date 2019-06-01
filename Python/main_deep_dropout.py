@@ -20,12 +20,12 @@ parser.add_argument('--lag', type=int, default=32)
 parser.add_argument('--num_of_eval', type=int, default=25)
 
 parser.add_argument('--init_lr', type=float, default=1e-1)
-parser.add_argument('--num_of_epoch', type=int, default=200)
-parser.add_argument('--num_of_episode', type=int, default=50)
+parser.add_argument('--num_of_epoch', type=int, default=20)
+parser.add_argument('--num_of_episode', type=int, default=20)
 
 parser.add_argument('--week_num', type=int, default=1)
 
-parser.add_argument('--model_path', type=str, default='best_model_AUDUSD_small.pth')
+parser.add_argument('--model_path', type=str, default='best_model_AUDUSD_week1_20190601-035533_dropout.pth')
 parser.add_argument('--offset', type=int, default=300)
 parser.add_argument('--num_of_test', type=int, default=50)
 

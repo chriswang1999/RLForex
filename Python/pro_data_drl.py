@@ -78,4 +78,4 @@ def CreateFeature(cur, lag, week_num):
     _eval.to_csv(evalname,index=False)
 
 if __name__=='__main__':
-    CreateFeature('AUDUSD', 32, 2)
+    CreateFeature('AUDUSD', 32, 1)

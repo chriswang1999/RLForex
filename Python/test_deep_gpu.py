@@ -11,7 +11,10 @@ from utils_deep import draw_eval_episode
 def test(config):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     policy = Policy()
-    policy.load_state_dict(torch.load(config.model_path))
+    if torch.cuda.is_available():
+        policy.load_state_dict(torch.load(config.model_path))
+    else:
+        policy.load_state_dict(torch.load(config.model_path, map_location='cpu'))
     policy.to(device)
 
     d = {'bid_price': [0], 'ask_price': [0], 'action':[0]}
