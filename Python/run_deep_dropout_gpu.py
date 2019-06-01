@@ -32,22 +32,25 @@ class Policy(nn.Module):
         self.elu_2 = nn.ELU()
         self.elu_3 = nn.ELU()
         self.tanh = nn.Tanh()
-
+        self.dropout = nn.Dropout(p=0.2)
         self.saved_log_probs = []
         self.rewards = 0
         self.actions = []
 
     def forward(self, x, y):
         x = self.affine1(x)
+        x = self.dropout(x)
         x = self.elu_1(x)
         x = self.hidden1(x)
+        x = self.dropout(x)
         x = self.elu_2(x)
         x = self.hidden2(x)
+        x = self.dropout(x)
         x = self.elu_3(x)
         y = self.affine2(y)
         action = self.tanh(x + y)
         return action
-print ('run deep gpu py')
+print ('run deep gpu py with dropout')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print (device)
 global policy
@@ -65,10 +68,10 @@ def train_eval(config):
     rewards_over_time = []
 
     NUM_OF_EVAL_DATA = config.num_of_eval
-
+    
     _time = time.strftime("%Y%m%d-%H%M%S")
-    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '.pth'
-    log_path = './deep/log_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '.txt'
+    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '_dropout.pth'
+    log_path = './deep/log_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '_dropout.txt'
 
     best_accumulative_return = -1000
     #load_model_and_overhead = time.time() - start
