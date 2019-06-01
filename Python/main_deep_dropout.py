@@ -1,5 +1,5 @@
 import os
-from run_deep_gpu import train_eval
+from run_deep_dropout_gpu import train_eval
 from test_deep_gpu import test
 import time
 import argparse

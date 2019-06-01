@@ -1,10 +1,10 @@
 import os
-from run_deep_gpu import train_eval
-from test_deep_gpu import test
+from run_linear_gpu import train_eval
+from test_linear_gpu import test
 import time
 import argparse
 
-reward_file = './deep/reward'+ str(time.time()) + '.txt'
+reward_file = './linear/reward'+ str(time.time()) + '.txt'
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='train_eval')
@@ -25,7 +25,7 @@ parser.add_argument('--num_of_episode', type=int, default=50)
 
 parser.add_argument('--week_num', type=int, default=1)
 
-parser.add_argument('--model_path', type=str, default='best_model_AUDUSD_small.pth')
+parser.add_argument('--model_path', type=str, default='/home/shared/RLForex/Python/linear/best_model_AUDUSD_week1_jun01.pth')
 parser.add_argument('--offset', type=int, default=300)
 parser.add_argument('--num_of_test', type=int, default=50)
 

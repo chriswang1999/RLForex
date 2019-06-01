@@ -13,17 +13,17 @@ torch.manual_seed(1)
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(256, 64, bias = True)
-        self.hidden1 = nn.Linear(64, 8, bias = True)
-        self.hidden2 = nn.Linear(8, 1, bias = True)
+        self.affine1 = nn.Linear(256, 1, bias = True)
+        #self.hidden1 = nn.Linear(64, 8, bias = True)
+        #self.hidden2 = nn.Linear(8, 1, bias = True)
         self.affine2 = nn.Linear(1, 1, bias = False)
         torch.nn.init.xavier_uniform_(self.affine1.weight)
-        torch.nn.init.xavier_uniform_(self.affine2.weight)
-        torch.nn.init.xavier_uniform_(self.hidden1.weight)
-        torch.nn.init.xavier_uniform_(self.hidden2.weight)
+        #torch.nn.init.xavier_uniform_(self.affine2.weight)
+        #torch.nn.init.xavier_uniform_(self.hidden1.weight)
+        #torch.nn.init.xavier_uniform_(self.hidden2.weight)
         self.elu_1 = nn.ELU()
-        self.elu_2 = nn.ELU()
-        self.elu_3 = nn.ELU()
+        #self.elu_2 = nn.ELU()
+        #self.elu_3 = nn.ELU()
         self.tanh = nn.Tanh()
 
         self.saved_log_probs = []
@@ -33,14 +33,14 @@ class Policy(nn.Module):
     def forward(self, x, y):
         x = self.affine1(x)
         x = self.elu_1(x)
-        x = self.hidden1(x)
-        x = self.elu_2(x)
-        x = self.hidden2(x)
-        x = self.elu_3(x)
+        #x = self.hidden1(x)
+        #x = self.elu_2(x)
+        #x = self.hidden2(x)
+        #x = self.elu_3(x)
         y = self.affine2(y)
         action = self.tanh(x + y)
         return action
-print ('run deep gpu py')
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print (device)
 global policy
@@ -51,29 +51,23 @@ def train_eval(config):
     #change the optimizer
     #add in dropout
     #use new data from Iris
-    #start = time.time()
-    # starting time
     optimizer = optim.SGD(policy.parameters(), lr= config.init_lr)
     # eps = np.finfo(np.float32).eps.item()
     rewards_over_time = []
 
     NUM_OF_EVAL_DATA = config.num_of_eval
-    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + str(time.time()) + '.pth'
+    PATH = './linear/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + str(time.time()) + '.pth'
 
     best_accumulative_return = -1000
-    #load_model_and_overhead = time.time() - start
-    #print ('load model and overhead {}'.format(load_model_and_overhead))
+
     for epoch in range(config.num_of_epoch):
         for i_episode in range(config.num_of_episode):
-            #start_episode = time.time()
             ask = torch.zeros((1, 1)).to(device)
             bid = torch.zeros((1, 1)).to(device)
             previous_action = torch.tensor([0.0]).to(device)
             while ask.size()[0] <= config.timespan and bid.size()[0]<= config.timespan:
                 target_bid, target_ask, feature_span = draw_train_episode(config.week_num, config.lag, config.currency, config.min_history)
                 bid, ask, features = target_bid*1e3, target_ask*1e3, feature_span
-            #finish_draw = time.time()
-            #print('Time to draw features is {}'.format(finish_draw - start_episode))
             for t in range(config.timespan):  # Don't infinite loop while learning
                 state = feature_span[t]
                 save_action = policy(state.float(),0.1*previous_action).to(device)
@@ -82,9 +76,7 @@ def train_eval(config):
                     save_action = 0
 
                 action = save_action - previous_action
-
                 price = 0
-                #print('The action is', action, type(action))
                 if action > 0:
                     price = ask[t]
                 elif action < 0:
@@ -94,13 +86,11 @@ def train_eval(config):
                 policy.rewards += reward
 
                 previous_action = save_action
-            #after_an_hour = time.time()
-            #print ('after an hour of training is {}'.format(after_an_hour - finish_draw))
+
             optimizer.zero_grad()
             loss = - policy.rewards / config.timespan
             loss.backward(retain_graph=True)
             optimizer.step()
-            #print('Time used to backprop {}'.format(time.time() - after_an_hour))
             if i_episode %  10 ==  0:
                 print('Epoch: {} Episode:{} The loss of training is {}'.format(epoch, i_episode, loss.item()))
             policy.rewards = 0
