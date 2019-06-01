@@ -10,6 +10,15 @@ from utils_deep import draw_train_episode, draw_eval_episode
 
 torch.manual_seed(1)
 
+
+def logging(s, log_path, print_=True, log_=True):
+    if print_:
+        print(s)
+    if log_:
+        with open(log_path, 'a+') as f_log:
+            f_log.write(s + '\n')
+
+
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
@@ -61,7 +70,10 @@ def train_eval(config):
     rewards_over_time = []
 
     NUM_OF_EVAL_DATA = config.num_of_eval
-    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + str(time.time()) + '_dropout.pth'
+    
+    _time = time.strftime("%Y%m%d-%H%M%S")
+    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '_dropout.pth'
+    log_path = './deep/log_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '_dropout.txt'
 
     best_accumulative_return = -1000
     #load_model_and_overhead = time.time() - start
@@ -105,7 +117,8 @@ def train_eval(config):
             optimizer.step()
             #print('Time used to backprop {}'.format(time.time() - after_an_hour))
             if i_episode %  10 ==  0:
-                print('Epoch: {} Episode:{} The loss of training is {}'.format(epoch, i_episode, loss.item()))
+                to_log = 'Epoch: {} Episode:{} The loss of training is {}'.format(epoch, i_episode, loss.item())
+                logging(to_log, log_path)
             policy.rewards = 0
 
         # eval after running 1000 episodes
@@ -139,13 +152,16 @@ def train_eval(config):
                     accumulative_reward_test += reward
                     current_reward  += reward
                     previous_action = save_action
-            print ("Evaluating on {} datapoint and return is {}".format(NUM_OF_EVAL_DATA, accumulative_reward_test))
+            to_log = "Evaluating on {} datapoint and return is {}".format(NUM_OF_EVAL_DATA, accumulative_reward_test)
+            logging(to_log, log_path)
+
             rewards_over_time.append(accumulative_reward_test)
 
             if (accumulative_reward_test * 1.0 / NUM_OF_EVAL_DATA > best_accumulative_return):
                 torch.save(policy.state_dict(), PATH)
                 best_accumulative_return = accumulative_reward_test * 1.0 / NUM_OF_EVAL_DATA
-        print (80*"=")
+        logging("=======================================================", log_path)
+
         policy.train()
 
     with open(config.reward_file, 'w') as filehandle:

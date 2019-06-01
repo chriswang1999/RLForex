@@ -4,7 +4,8 @@ from test_deep_gpu import test
 import time
 import argparse
 
-reward_file = './deep/reward'+ str(time.time()) + '.txt'
+reward_file = './deep/reward'+ time.strftime("%Y%m%d-%H%M%S") + '_dropout.txt'
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='train_eval')

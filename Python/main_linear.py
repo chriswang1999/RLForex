@@ -4,7 +4,7 @@ from test_linear_gpu import test
 import time
 import argparse
 
-reward_file = './linear/reward'+ str(time.time()) + '.txt'
+reward_file = './linear/reward'+ time.strftime("%Y%m%d-%H%M%S") + '.txt'
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='train_eval')
