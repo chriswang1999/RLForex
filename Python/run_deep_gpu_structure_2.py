@@ -67,7 +67,7 @@ def train_eval(config):
     NUM_OF_EVAL_DATA = config.num_of_eval
 
     _time = time.strftime("%Y%m%d-%H%M%S")
-    PATH = './deep/best_model_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '.pth'
+    PATH = './deep/best_model_structure_5050_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '.pth'
     log_path = './deep/log_'+ config.currency +'_week' + str(config.week_num) + '_' + _time + '.txt'
 
     best_accumulative_return = -1000
