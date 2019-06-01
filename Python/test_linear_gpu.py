@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from run_deep_gpu import Policy
+from run_linear_gpu import Policy
 #*********************************#
 from utils_deep import draw_eval_episode
 #*********************************#
