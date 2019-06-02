@@ -20,7 +20,7 @@ def logging(s, log_path, print_=True, log_=True):
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(256, 1, bias = True)
+        self.affine1 = nn.Linear(512, 1, bias = True)
         #self.hidden1 = nn.Linear(64, 8, bias = True)
         #self.hidden2 = nn.Linear(8, 1, bias = True)
         self.affine2 = nn.Linear(1, 1, bias = False)
