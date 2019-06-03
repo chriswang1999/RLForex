@@ -44,7 +44,7 @@ def draw_train_episode(week_num, lag, cur, min_history):
     train = _train[_train.timestamp.isin(timeframe)]
     target_bid = train['bid price'].values
     target_ask = train['ask price'].values
-    feature_span = train.iloc[:,-512:].values
+    feature_span = train.iloc[:,-lag*8*2:].values
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return torch.tensor(target_bid).to(device), torch.tensor(target_ask).to(device), torch.tensor(normalized).to(device)
 
@@ -63,7 +63,7 @@ def draw_eval_episode(week_num, lag, cur, min_history, factor, offset):
     eval = _eval[_eval.timestamp.isin(timeframe)]
     target_bid = eval['bid price'].values
     target_ask = eval['ask price'].values
-    feature_span = eval.iloc[:,-512:].values
+    feature_span = eval.iloc[:,-lag*8*2:].values
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return torch.tensor(target_bid).to(device), torch.tensor(target_ask).to(device), torch.tensor(normalized).to(device)
 
