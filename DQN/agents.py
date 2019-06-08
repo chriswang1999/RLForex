@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import math
 
-T = 3601
+T = 97
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -127,12 +127,13 @@ class MLP(nn.Module):
     def __init__(self, dimensions):
         super(MLP, self).__init__()
         self.layers = nn.ModuleList()
+        self.dropout = nn.Dropout(p=0.2)
         for i in range(len(dimensions)-1):
             self.layers.append(nn.Linear(dimensions[i], dimensions[i+1]))
 
     def forward(self, x):
         for l in self.layers[:-1]:
-            x = nn.functional.elu(l(x))
+            x = self.dropout(nn.functional.elu(l(x)))
         x = self.layers[-1](x)
         return x
 
@@ -197,7 +198,9 @@ class DQNAgent(Agent):
         """
         reward_history = self.get_episode_reward(observation_history, action_history)
 #        self.cummulative_reward += np.sum(reward_history)
+#         print ('The reward history is ', reward_history)
         self.cummulative_reward += torch.sum(reward_history).to(device)
+        # print ('The cumulative reward after summing up the reward history ', self.cummulative_reward)
 
         tau = len(action_history)
 #        feature_history = np.zeros((tau+1, self.feature_extractor.dimension))
@@ -283,6 +286,7 @@ class DQNAgent(Agent):
         with torch.no_grad():
 #            action_values = self.model(torch.from_numpy(feature).float()).numpy()
             action_values = self.model(feature.float())
+            # print(action_values )
         if not self.test_mode:
             action = self._epsilon_greedy_action(action_values, self.epsilon)
             self.timestep += 1
@@ -302,38 +306,55 @@ class DQNAgent(Agent):
 def Forex_reward_function(observation_history, action_history):
     #action is 0, 1, 2 and then it represents the position, do percentage return
     time, state, price, terminated = observation_history[-1]
-    time_old, state_old, price_old, terminated_old = observation_history[-2]
-    b_now, a_now = price
-    b_old, a_old = price_old
-    position = action_history[-1]-1
+    # print('t', time)
+    b_now, a_now, b_next, a_next = price
+    mid_now = (b_now + a_now)/2
+    mid_next = (b_next + a_next)/2
+    spread = (a_now - b_now + a_next - b_next)/2
+    position = torch.tensor(action_history[-1]-1).to(device)
     if len(action_history) == T-1:  #if it its the last step force it to liquidate
-        position = 0
+        position = torch.tensor(0).to(device)
     if len(action_history) == 1:
-        prev_position = 0
+        prev_position = torch.tensor(0).to(device)
     else:
         prev_position = action_history[-2]-1
-    old_mid_price = (b_old + a_old)/2
-    new_mid_price = (b_now + a_now)/2
-    if position == -1:
-        if prev_position == -1:
-            return a_old - a_now
-        if prev_position == 0:
-            return old_mid_price - a_now
-        if prev_position == 1:
-            return b_old - a_now
-    elif position == 0:
-        if prev_position == -1:
-            return new_mid_price - a_old
-        if prev_position == 0:
-            return 0
-        if prev_position == 1:
-            return new_mid_price - b_old
-    elif position == 1:
-        if prev_position == -1:
-            return b_now - a_old
-        if prev_position == 0:
-            return b_now - old_mid_price
-        if prev_position == 1:
-            return b_now - b_old
-    else:
-        return 0
+    reward = position.float() * (mid_next - mid_now) - torch.tensor(0.) * spread * torch.abs(position - prev_position).float()
+    # time_old, state_old, price_old, terminated_old = observation_history[-2]
+    # b_now, a_now = price
+    # b_old, a_old = price_old
+    # position = action_history[-1]-1
+    # if len(action_history) == T-1:  #if it its the last step force it to liquidate
+    #     position = 0
+    # if len(action_history) == 1:
+    #     prev_position = 0
+    # else:
+    #     prev_position = action_history[-2]-1
+    # old_mid_price = (b_old + a_old)/2
+    # new_mid_price = (b_now + a_now)/2
+    # reward = 0
+    # if position == -1:
+    #     if prev_position == -1:
+    #         reward = a_old - a_now
+    #     elif prev_position == 0:
+    #         reward = old_mid_price - a_now
+    #     elif prev_position == 1:
+    #         reward = b_old - a_now
+    # elif position == 0:
+    #     if prev_position == -1:
+    #         reward = new_mid_price - a_old
+    #     elif prev_position == 1:
+    #         reward = new_mid_price - b_old
+    # elif position == 1:
+    #     if prev_position == -1:
+    #         reward = b_now - a_old
+    #     elif prev_position == 0:
+    #         reward = b_now - old_mid_price
+    #     elif prev_position == 1:
+    #         reward = b_now - b_old
+    # print('b', b_now,b_next)
+    # print('a', a_now,a_next)
+    # print('m', mid_now,mid_next)
+    # print('s', spread)
+    # print('p', position, prev_position)
+    # print('r', reward)
+    return reward

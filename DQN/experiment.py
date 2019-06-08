@@ -12,34 +12,37 @@ from agents import RandomAgent
 from agents import DQNAgent
 from agents import Forex_reward_function
 from feature import ForexIdentityFeature
-
+import time
 
 if __name__ == '__main__':
+    cur = 'EURUSD'
+    reward_path = './'+ cur +'/results/'+ time.strftime("%Y%m%d-%H%M%S") +'/'
+    agent_path = './'+ cur +'/agents/' + time.strftime("%Y%m%d-%H%M%S") +'/'
 
-    reward_path = './results/'
-    agent_path = './agents/'
+    if not os.path.exists(reward_path):
+        os.makedirs(reward_path)
+    if not os.path.exists(agent_path):
+        os.makedirs(agent_path)
 
-    env = ForexEnv()
-
+    env = ForexEnv(mode = 'train')
 
     # train dqn agents
-    number_seeds = 3
+    number_seeds = 1
     for seed in trange(number_seeds):
         np.random.seed(seed)
         torch.manual_seed(seed)
 
         agent = DQNAgent(
             action_set=[0, 1, 2],
-            # reward_function=functools.partial(cartpole_reward_function, reward_type='sparse'),
             reward_function=functools.partial(Forex_reward_function),
             feature_extractor=ForexIdentityFeature(),
             hidden_dims=[50, 50],
             learning_rate=5e-4,
-            buffer_size=5000,
+            buffer_size=50000,
             # batch_size=16,
-            batch_size=8,
+            batch_size=64,
             num_batches=100,
-            starts_learning=100,
+            starts_learning=1000,
             final_epsilon=0.02,
             discount=0.99,
             target_freq=10,
@@ -49,12 +52,10 @@ if __name__ == '__main__':
         _, _, rewards = live(
             agent=agent,
             environment=env,
-            # num_episodes=100,
-            # max_timesteps=3601,
             num_episodes=500,
-            max_timesteps=5,
+            max_timesteps=3600,
             verbose=True,
-            print_every=50)
+            print_every=10)
 
         file_name = '|'.join(['dqn', str(seed)])
         np.save(os.path.join(reward_path, file_name), rewards)

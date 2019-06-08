@@ -19,13 +19,16 @@ def live(agent, environment, num_episodes, max_timesteps,
     
     for episode in range(num_episodes):
         agent.reset_cumulative_reward()
-        observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
+        new_env = environment.reset()
+        observation_history = [(new_env[0],new_env[1],new_env[2], False)]
+        # observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
         action_history = []
         
         t = 0
         done = False
         while not done:
             action = agent.act(observation_history, action_history)
+            # action = 0
             timestamp, state, price_record, done = environment.step(action)
             action_history.append(action)
             observation_history.append((timestamp, state, price_record, done))
@@ -33,23 +36,73 @@ def live(agent, environment, num_episodes, max_timesteps,
             done = done or (t == max_timesteps)
 
         agent.update_buffer(observation_history, action_history)
+        # print('uploading')
         agent.learn_from_buffer()
+        # print('learning')
 
         observation_data.append(observation_history)
         action_data.append(action_history)
         rewards.append(agent.cummulative_reward)
 
         if verbose and (episode % print_every == 0):
-            print("ep %d,  reward %.2f" % (episode, agent.cummulative_reward))
+            print("ep %d,  reward %.5f" % (episode, agent.cummulative_reward))
+            print('short', action_history.count(0))
+            print('neutral', action_history.count(1))
+            print('long', action_history.count(2))
+        if episode % (5 * print_every) == 0:
+            test(agent, environment, 10, max_timesteps)
 
     return observation_data, action_data, rewards
 
+def test(agent, environment, num_episodes, max_timesteps, verbose=True, print_every=10):
+    observation_data = [] #(self.timestamp, self.state, self.price_record)
+    action_data = []
+    rewards = []
+    agent.test_mode = True
+    print("agent: %s, number of episodes: %d" % (str(agent), num_episodes))
+    print (20*"=", "start testing on eval set", 20*"=")
+    for episode in range(10):
+
+        agent.reset_cumulative_reward()
+        new_env = environment.reset_fixed(episode * 3600)
+        observation_history = [(new_env[0], new_env[1], new_env[2], False)]
+        # observation_history = [(environment.reset()[0],environment.reset()[1],environment.reset()[2], False)]
+        action_history = []
+
+        t = 0
+        done = False
+        while not done:
+            action = agent.act(observation_history, action_history)
+            # action = 0
+            timestamp, state, price_record, done = environment.step(action)
+            action_history.append(action)
+            observation_history.append((timestamp, state, price_record, done))
+            t += 1
+            done = done or (t == max_timesteps)
+
+        agent.update_buffer(observation_history, action_history)
+        # print('uploading')
+        #agent.learn_from_buffer()
+        # print('learning')
+
+        observation_data.append(observation_history)
+        action_data.append(action_history)
+        rewards.append(agent.cummulative_reward)
+
+        if verbose and (episode % print_every == 0):
+            print("ep %d,  reward %.5f" % (episode, agent.cummulative_reward))
+            print('short', action_history.count(0))
+            print('neutral', action_history.count(1))
+            print('long', action_history.count(2))
+    print ('The sum of the reward is {}'.format(np.sum(np.array(rewards))))
+    print (20 * "=", "finishing testing on eval set...", 20 * "=")
+    return observation_data, action_data, rewards
 
 ### Example of usage
 from environment import ForexEnv
-from agents_sparse import RandomAgent
-from agents_sparse import DQNAgent
-from agents_sparse import Forex_reward_function
+from agents import RandomAgent
+from agents import DQNAgent
+from agents import Forex_reward_function
 from feature import ForexIdentityFeature
 
 if __name__=='__main__':

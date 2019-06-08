@@ -5,7 +5,7 @@ from tqdm import tqdm
 np.random.seed(1)
 from itertools import count
 
-Pad = pd.read_csv('PadData_v2.csv')
+Pad = pd.read_csv('../PadData_v2.csv')
 # Default
 T = 3617
 m = 16
@@ -88,14 +88,14 @@ def draw_test_episode(m, cur, min_history):
     normalized = (feature_span-feature_span.mean())/feature_span.std()
     return target_bid, target_ask, normalized
 
-def draw_eval_episode(m, cur, min_history,  offset):
+def draw_eval_episode(m, cur, min_history, factor, offset):
     '''
     Input:
         m, number of lag returns z_1,...z_m
         cur, currency pair that we target to trade
         min_history, min length of a valid episode
     '''
-    n = int(to_draw.shape[0] * 0.6) + (offset * 3000 % (int(to_draw.shape[0] * 0.8) - int(to_draw.shape[0]*0.6)))
+    n = (factor * 3600) % (int(to_draw.shape[0] * 0.6)) + offset
     target_bid, target_ask, other_bid, other_ask = generate_episode(n,cur)
     feature_span = get_features(target_bid, target_ask, other_bid, other_ask, m)
     normalized = (feature_span-feature_span.mean())/feature_span.std()
