@@ -16,7 +16,7 @@ class ForexIdentityFeature(FeatureExtractor):
     Returns the current state vector (x, x_dot, theta, theta_dot).
     """
     def __init__(self):
-        self.dimension = 151
+        self.dimension = 296
 
     def get_feature(self, observation_history):
         return observation_history[-1][1]

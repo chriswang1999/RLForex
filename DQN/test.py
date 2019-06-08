@@ -4,10 +4,8 @@ test and visualize trained cartpole agents
 import numpy as np
 import torch
 import pandas as pd
-# from gym.envs.classic_control import rendering
-# import time
-# import skvideo.io
 import functools
+import os
 
 from environment import ForexEnv
 from agents import RandomAgent
@@ -15,67 +13,88 @@ from agents import DQNAgent
 from agents import Forex_reward_function
 from feature import ForexIdentityFeature
 
-def test(agent, environment, max_timesteps, n):
-    """
-    return observation and action data for one episode
-    """
-    # observation_history is a list of tuples (observation, termination signal)
-    new_env = environment.reset_eval(max_timesteps * n)
-    observation_history = [(new_env[0],new_env[1],new_env[2], False)]
-    action_history = []
+def logging(s, log_path, print_=True, log_=True):
+    if print_:
+        print(s)
+    if log_:
+        with open(log_path, 'a+') as f_log:
+            f_log.write(s + '\n')
 
-    t = 0
-    done = False
-    while not done:
-        action = agent.act(observation_history, action_history)
-        timestamp, state, price_record, done = environment.step(action)
-        action_history.append(action)
-        observation_history.append((timestamp, state, price_record, done))
-        t += 1
-        done = done or (t == max_timesteps)
-    print(action_history)
+def get_episode_reward(index_history, price_record_history, action_history):
+    action_history.insert(0,1)
+    print(len(action_history) == len(index_history))
+    print(len(price_record_history) == len(index_history))
+    for time in range(1,len(action_history)):
+        prev_position = action_history[time - 1] -1
+        if time == len(action_history) - 1:
+            position = 0
+        else:
+            position = action_history[time] -1
+        bid, ask, next_bid, next_ask = price_record_history[time]
 
-    return observation_history, action_history
+    return 0
 
-# def cap_reward(seed,cur = 'AUDUSD',lag = 16, length = 360):
-#     filename = './data/' + cur + '_lag_' + str(lag) + '.csv'
-#     df= pd.read_csv(filename).reset_index(drop = True)
+def test(agent, environment, num_episodes, max_timesteps, log_path = ''):
+    action_data = []
+    rewards = []
+    print_actions = []
+
+    for episode in range(num_episodes):
+        agent.reset_cumulative_reward()
+        new_env = environment.reset_fixed(episode * 3600)
+        observation_history = [(new_env[0], new_env[1], new_env[2], False)]
+        price_record_history =[new_env[2]]
+        index_history = [new_env[0]]
+        action_history = []
+
+        t = 0
+        done = False
+        while not done:
+            action = agent.act(observation_history, action_history)
+            timestamp, state, price_record, done = environment.step(action)
+            index_history.append(timestamp)
+            price_record_history.append(price_record)
+            action_history.append(action)
+            observation_history.append((timestamp, state, price_record, done))
+            t += 1
+            done = done or (t == max_timesteps)
+
+
+
+        logging('ep id  '+ str(episode) + '    1-hour est. reward ' +str(np.sum(np.array(rewards))),log_path)
+        logging('short  ' + str(print_actions.count(0)), log_path)
+        logging('neutral  '+ str(print_actions.count(1)), log_path)
+        logging('long  '+ str(print_actions.count(2)), log_path)
+
+        print_actions = []
+
+    return observation_data, action_data, rewards
 
 if __name__=='__main__':
     dqn_model_path = './AUDUSD/agents/20190526-174236/dqn|0.pt'
+    log_path = dqn_model_path[:-8] +'test.txt'
+
+    eps = 50
+    max_timesteps = 3600
+    hidden = [50,50] # Or [64,32]
 
     np.random.seed(321)
     torch.manual_seed(123)
 
     env = ForexEnv(mode = 'eval')
-    eps = 23
-    rewards = []
 
     agent = DQNAgent(
         action_set=[0, 1, 2],
         reward_function=functools.partial(Forex_reward_function),
         feature_extractor=ForexIdentityFeature(),
-        hidden_dims=[10, 10],
+        hidden_dims=hidden,
         test_model_path=dqn_model_path)
 
-    for e in range(eps):
-        observation_history, action_history = test(
-            agent=agent,
-            environment=env,
-            max_timesteps=3600,
-            n=e)
-        r = torch.sum(agent.get_episode_reward(observation_history, action_history))
-        print('reward %.5f' % r)
-        rewards.append(r)
-        # print(action_history)
-        if e == eps -1:
-            print(agent.get_episode_reward(observation_history, action_history))
-            print('short', action_history.count(0))
-            print('neutral', action_history.count(1))
-            print('long', action_history.count(2))
+    observation_data, action_data, rewards = test(agent=agent,
+                                                  environment=env,
+                                                  num_episodes=eps,
+                                                  max_timesteps=max_timesteps,
+                                                  log_path = log_path)
 
-    reward = torch.mean(torch.stack(rewards))
-
-    print('agent %s, cumulative reward %.4f' % (str(agent), reward))
 
 

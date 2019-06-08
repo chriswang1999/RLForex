@@ -60,8 +60,8 @@ class ForexEnv(Environment):
         self.state = None
         self.price_record = None
         # self.df = CreateFeature(self.ccy, self.lag).reset_index(drop = True)
-        trainname = './data/train_' + self.ccy + '_lag_' + str(self.lag) + '_week' + str(week) + '.csv'
-        evalname = './data/eval_' + self.ccy + '_lag_' + str(self.lag) + '_week' + str(week) + '.csv'
+        trainname = './train_' + self.ccy + '_lag_' + str(self.lag) + '_week' + str(week) + '.csv'
+        evalname = './eval_' + self.ccy + '_lag_' + str(self.lag) + '_week' + str(week) + '.csv'
         self.df_train = pd.read_csv(trainname).reset_index(drop = True)
         self.df_eval = pd.read_csv(evalname).reset_index(drop = True)
         self.trainframe = self.df_train.index.values.tolist()
@@ -144,8 +144,8 @@ class ForexEnv(Environment):
 
     def reset_fixed(self, number):
         to_draw = self.eval
-        # assert(number < len(to_draw))
-        n = number % len(to_draw)
+        assert(number < len(to_draw))
+        n = number
         self.index = to_draw[n]
 
         position = np.zeros(3)

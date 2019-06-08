@@ -8,9 +8,9 @@ from tqdm import trange
 
 from live import live
 from environment import ForexEnv
-from agents import RandomAgent
-from agents import DQNAgent
-from agents import Forex_reward_function
+from agents_na import RandomAgent
+from agents_na import DQNAgent
+from agents_na import Forex_reward_function
 from feature import ForexIdentityFeature
 import time
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     env_test = ForexEnv(mode = 'eval')
 
     # train dqn agents
-    number_seeds = 1
+    number_seeds = 3
     for seed in trange(number_seeds):
         np.random.seed(seed+1)
         torch.manual_seed(seed+2)
@@ -40,7 +40,7 @@ if __name__ == '__main__':
             action_set=[0, 1, 2],
             reward_function=functools.partial(Forex_reward_function),
             feature_extractor=ForexIdentityFeature(),
-            hidden_dims=[50, 50],
+            hidden_dims=[64, 32],
             learning_rate=0.000025,
             buffer_size=5000,
             batch_size=16,
@@ -53,12 +53,11 @@ if __name__ == '__main__':
             print_every=10,
             log_path = log_path)
 
-        rewards = live(
+        _, _, rewards = live(
             agent=agent,
             environment=env,
             test_environment=env_test,
-            # num_episodes=2000,
-            num_episodes=50,
+            num_episodes=3000,
             max_timesteps=3600,
             verbose=True,
             print_every=100,

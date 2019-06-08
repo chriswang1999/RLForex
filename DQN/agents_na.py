@@ -40,15 +40,8 @@ def Forex_reward_function(observation_history, action_history):
         prev_position = torch.tensor(0).to(device)
     else:
         prev_position = action_history[-2]-1
-    reward_0 = torch.tensor(-1.).float() * (mid_next - mid_now) - \
-               torch.tensor(0.) * spread * torch.abs(torch.tensor(-1 - prev_position)).float()
-    reward_1 = torch.tensor(0.).float() * (mid_next - mid_now) - \
-               torch.tensor(0.) * spread * torch.abs(torch.tensor(0 - prev_position)).float()
-    reward_2 = torch.tensor(1.).float() * (mid_next - mid_now) - \
-               torch.tensor(0.) * spread * torch.abs(torch.tensor(1 - prev_position)).float()
-    reward = (position.float() == torch.tensor(-1.).float().to(device)).float().to(device) * reward_0.to(device) + \
-             (position.float() == torch.tensor(0.).float().to(device)).float().to(device) * reward_1.to(device) + \
-             (position.float() == torch.tensor(1.).float().to(device)).float().to(device) * reward_2.to(device)
+    reward = position.float() * (mid_next - mid_now) - torch.tensor(0.) * spread * torch.abs(position - prev_position).float()
+
     # time_old, state_old, price_old, terminated_old = observation_history[-2]
     # b_now, a_now = price
     # b_old, a_old = price_old
@@ -87,7 +80,7 @@ def Forex_reward_function(observation_history, action_history):
     # print('s', spread)
     # print('p', position, prev_position)
     # print('r', reward)
-    return reward,(reward_0,reward_1,reward_2)
+    return reward
     # return clip_reward
 
 class Buffer(object):
@@ -142,14 +135,10 @@ class Agent(object):
         tau = len(action_history)
         # reward_history = np.zeros(tau)
         reward_history = torch.zeros(tau).to(device)
-        reward_history_0 = torch.zeros(tau).to(device)
-        reward_history_1 = torch.zeros(tau).to(device)
-        reward_history_2 = torch.zeros(tau).to(device)
+
         for t in range(tau):
-            reward_history[t], tup = self.reward_function(
-                observation_history[:t+2], action_history[:t+1])
-            reward_history_0[t], reward_history_1[t], reward_history_2[t] = tup
-        return reward_history, reward_history_0, reward_history_1, reward_history_2
+            reward_history[t] = self.reward_function(observation_history[:t+2], action_history[:t+1])
+        return reward_history
 
     def _random_argmax(self, action_values):
         # argmax_list = np.where(action_values==np.max(action_values))[0]
@@ -201,7 +190,7 @@ class RandomAgent(Agent):
         return self.action_set[torch.randint(len(self.action_set), (1,)).to(device)[0]]
 
     def update_buffer(self, observation_history, action_history):
-        reward_history,_,_,_ = self.get_episode_reward(observation_history, action_history)
+        reward_history = self.get_episode_reward(observation_history, action_history)
 #        self.cummulative_reward += np.sum(reward_history)
         self.cummulative_reward += torch.sum(reward_history).to(device)
 
@@ -228,7 +217,7 @@ class DQNAgent(Agent):
         hidden_dims=[50, 50], learning_rate=5e-4, buffer_size=50000,
         batch_size=64, num_batches=100, starts_learning=5000, final_epsilon=0.02,
         discount=0.99, target_freq=10, verbose=False, print_every=1,
-        test_model_path=None, log_path = ''):
+        test_model_path=None,log_path = ''):
 
         Agent.__init__(self, [0, 1, 2], reward_function)
         self.feature_extractor = feature_extractor
@@ -270,7 +259,7 @@ class DQNAgent(Agent):
 
         else:
             self.test_mode = True
-            self.model.load_state_dict(torch.load(test_model_path, map_location='cpu'))
+            self.model.load_state_dict(torch.load(test_model_path))
             self.model.eval()
 
 
@@ -286,7 +275,7 @@ class DQNAgent(Agent):
         """
         update buffer with data collected from current episode
         """
-        reward_history,r_h_0,r_h_1,r_h_2 = self.get_episode_reward(observation_history, action_history)
+        reward_history = self.get_episode_reward(observation_history, action_history)
 #        self.cummulative_reward += np.sum(reward_history)
 #         print ('The reward history is ', reward_history)
         self.cummulative_reward += torch.sum(reward_history).to(device)
@@ -300,14 +289,14 @@ class DQNAgent(Agent):
 
             for t in range(tau-1):
                 ### Action augmentation ###
+                self.buffer.add(feature_history[t], action_history[t],
+                                reward_history[t], feature_history[t+1])
                 # self.buffer.add(feature_history[t], action_history[t],
-                #                 reward_history[t], feature_history[t+1])
-                self.buffer.add(feature_history[t], action_history[t],
-                                r_h_0[t], feature_history[t+1])
-                self.buffer.add(feature_history[t], action_history[t],
-                                r_h_1[t], feature_history[t+1])
-                self.buffer.add(feature_history[t], action_history[t],
-                                r_h_2[t], feature_history[t+1])
+                #                 r_h_0[t], feature_history[t+1])
+                # self.buffer.add(feature_history[t], action_history[t],
+                #                 r_h_1[t], feature_history[t+1])
+                # self.buffer.add(feature_history[t], action_history[t],
+                #                 r_h_2[t], feature_history[t+1])
 
             done = observation_history[tau][3]
             if done:
@@ -315,14 +304,14 @@ class DQNAgent(Agent):
             else:
                 feat_next = feature_history[tau]
             ### Action augmentation ###
+            self.buffer.add(feature_history[tau-1], action_history[tau-1],
+                            reward_history[tau-1], feat_next)
             # self.buffer.add(feature_history[tau-1], action_history[tau-1],
-            #                 reward_history[tau-1], feat_next)
-            self.buffer.add(feature_history[tau-1], action_history[tau-1],
-                            r_h_0[tau-1], feat_next)
-            self.buffer.add(feature_history[tau-1], action_history[tau-1],
-                            r_h_1[tau-1], feat_next)
-            self.buffer.add(feature_history[tau-1], action_history[tau-1],
-                            r_h_2[tau-1], feat_next)
+            #                 r_h_0[tau-1], feat_next)
+            # self.buffer.add(feature_history[tau-1], action_history[tau-1],
+            #                 r_h_1[tau-1], feat_next)
+            # self.buffer.add(feature_history[tau-1], action_history[tau-1],
+            #                 r_h_2[tau-1], feat_next)
 
         else:
             pass
@@ -348,6 +337,7 @@ class DQNAgent(Agent):
             next_feature_batch = []
             for i, d in enumerate(minibatch):
                 x, a, r, x_next = d
+#                feature_batch[i] = torch.from_numpy(x)
                 feature_batch[i] = x
                 action_batch[i] = torch.tensor(a, dtype=torch.long).to(device)
                 reward_batch[i] = r
@@ -356,15 +346,19 @@ class DQNAgent(Agent):
                     next_feature_batch.append(x_next)
             q_vs = self.model(feature_batch)
             model_estimates = q_vs.gather(1, action_batch)
+            # print(q_vs)
             future_values = torch.zeros(self.batch_size).to(device)
             if next_feature_batch != []:
+
+#                next_feature_batch = torch.tensor(next_feature_batch, dtype=torch.float)
                 next_feature_batch = torch.stack(next_feature_batch).type(torch.float).to(device)
+                #print(next_feature_batch)
                 future_values[non_terminal_idxs] = self.target_net(next_feature_batch).max(1)[0].detach()
             future_values = future_values.unsqueeze(1)
             target_values = reward_batch + self.discount * future_values
-
+            ######
             loss = nn.functional.mse_loss(model_estimates, target_values)
-
+            ######
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -397,12 +391,17 @@ class DQNAgent(Agent):
         """ select action according to an epsilon greedy policy with respect to
         the Q network """
         feature = self.feature_extractor.get_feature(observation_history)
+#        print(feature.dtype)
         with torch.no_grad():
+#            action_values = self.model(torch.from_numpy(feature).float()).numpy()
             action_values = self.model(feature.float())
+            # print(action_values)
         if not self.test_mode:
+            # action = self._random_argmax(action_values)
             action = self._epsilon_greedy_action(action_values, self.epsilon)
             self.timestep += 1
         else:
+            # print(action_values)
             action = self._random_argmax(action_values)
 
         return action
